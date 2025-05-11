@@ -14,5 +14,8 @@ Score is mainly calculated from individual contributions made to the commit. The
 - [Task 4](/function_documentation.md)
 
 ## Team Members
-- Member A
-- Member B
+- Member Team 5
+1. Nadia Artamelina
+2. Vivia Marsha Syahrani
+3. Intan Ameliya
+4. Intan Naurah Khairani
