@@ -145,29 +145,29 @@ Berisi deklarasi fungsi untuk statx(), termasuk parsing dan eksekusi syscall met
 ### sync.h
 Mendeklarasikan fungsi untuk operasi sinkronisasi file seperti fsync, sync_file_range, dan fallocate, yang digunakan oleh sync.c.
 
-tctx.h
+### tctx.h
 Mendeklarasikan struktur data dan fungsi yang berkaitan dengan task context untuk io_uring.
 
-timeout.h
+### timeout.h
 Mendefinisikan struktur dan prototipe fungsi yang diperlukan untuk mengelola timeout di io_uring.
 
-truncate.h
+### truncate.h
 Berisi deklarasi fungsi dan struktur untuk operasi truncate di io_uring.
 
-⁠uring_cmd.h
+### uring_cmd.h
 Mendeklarasikan antarmuka dan struktur data untuk perintah khusus (uring_cmd) di io_uring.
 
-⁠waitid.h
+### ⁠waitid.h
 Mendefinisikan fungsi dan struktur untuk operasi waitid di io_uring.
 
-xattr.h
+### xattr.h
 Mendeklarasikan fungsi dan struktur yang diperlukan untuk operasi extended attributes di io_uring.
 
-⁠zcrx.h
+### ⁠zcrx.h
 Berisi deklarasi fungsi dan struktur terkait zero-copy RX di io_uring.
 
-refs.h
+### refs.h
 Berisi definisi dan utilitas untuk manajemen reference counting (penghitungan referensi) dalam io_uring, memastikan alokasi dan dealokasi memori yang aman.
 
-slist.h
-Mendefinisikan struktur singly-linked list (daftar tertaut tunggal) yang digunakan dalam io_uring untuk manajemen daftar operasi atau entri lainnya.
+### slist.h
+Mendefinisikan struktur single-linked list (daftar tertaut tunggal) yang digunakan dalam io_uring untuk manajemen daftar operasi atau entri lainnya.
