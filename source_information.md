@@ -62,6 +62,28 @@ Mengimplementasikan syscall statx() secara asinkron untuk mengambil metadata fil
 ### sync.c
 Mengelola operasi sinkronisasi dan alokasi file seperti sync_file_range, fsync, dan fallocate. Fungsi io_sync_file_range() dan io_fsync() menangani penyimpanan data ke disk, sementara io_fallocate() memesan ruang pada file. File ini penting untuk mendukung konsistensi data dan efisiensi penulisan, terutama pada aplikasi database atau log writer.
 
+### tctx.c
+Mengimplementasikan fungsi terkait task context (konteks tugas) dalam io_uring, yang mengatur bagaimana operasi I/O dikaitkan dengan tugas (task/process) tertentu di kernel Linux.
+
+### timeout.c
+Menangani operasi timeout (batas waktu) dalam io_uring, memastikan bahwa operasi I/O dapat dibatalkan atau diselesaikan setelah jangka waktu tertentu.
+
+### truncate.c
+Mengimplementasikan operasi truncate (pemotongan file) dalam io_uring, memungkinkan pengubahan ukuran file secara asinkron.
+
+### ⁠uring_cmd.c
+Menyediakan implementasi perintah khusus (uring_cmd) untuk io_uring, yang memungkinkan eksekusi operasi I/O yang lebih spesifik.
+
+### ⁠waitid.c
+Mengimplementasikan operasi waitid dalam io_uring, yang memungkinkan menunggu proses anak (child process) secara asinkron.
+
+### xattr.c
+Menangani operasi extended attributes (atribut tambahan file) secara asinkron melalui io_uring.
+
+### ⁠zcrx.c
+Mengimplementasikan optimasi penerimaan data zero-copy dalam io_uring untuk kinerja jaringan yang lebih baik.
+
+
 ## Headers
 ### advice.h
 Just declare the function specification.
@@ -123,3 +145,29 @@ Berisi deklarasi fungsi untuk statx(), termasuk parsing dan eksekusi syscall met
 ### sync.h
 Mendeklarasikan fungsi untuk operasi sinkronisasi file seperti fsync, sync_file_range, dan fallocate, yang digunakan oleh sync.c.
 
+tctx.h
+Mendeklarasikan struktur data dan fungsi yang berkaitan dengan task context untuk io_uring.
+
+timeout.h
+Mendefinisikan struktur dan prototipe fungsi yang diperlukan untuk mengelola timeout di io_uring.
+
+truncate.h
+Berisi deklarasi fungsi dan struktur untuk operasi truncate di io_uring.
+
+⁠uring_cmd.h
+Mendeklarasikan antarmuka dan struktur data untuk perintah khusus (uring_cmd) di io_uring.
+
+⁠waitid.h
+Mendefinisikan fungsi dan struktur untuk operasi waitid di io_uring.
+
+xattr.h
+Mendeklarasikan fungsi dan struktur yang diperlukan untuk operasi extended attributes di io_uring.
+
+⁠zcrx.h
+Berisi deklarasi fungsi dan struktur terkait zero-copy RX di io_uring.
+
+refs.h
+Berisi definisi dan utilitas untuk manajemen reference counting (penghitungan referensi) dalam io_uring, memastikan alokasi dan dealokasi memori yang aman.
+
+slist.h
+Mendefinisikan struktur singly-linked list (daftar tertaut tunggal) yang digunakan dalam io_uring untuk manajemen daftar operasi atau entri lainnya.
