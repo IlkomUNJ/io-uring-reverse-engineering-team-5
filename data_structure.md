@@ -79,10 +79,6 @@ io_issue_def   | io_uring/opdef.h | needs_file, plug, ioprio, iopoll, buffer_sel
 | | | | io_cold_defs | io_uring/opdef.c | local variable
 | | | | io_uring_op_supported | io_uring/opdef.c | function parameter
 | | | | io_uring_optable_init | io_uring/opdef.c | local variable     
-
-
-
----------------|------------|------------|-------------------------|---------------|-------------------
 io_issue_def   | io_uring/opdef.h | Various op-specific attributes (needs_file, pollin, pollout, etc.), prep and issue function pointers | io_uring/opdef.c | io_issue_defs[] array | Defines behavior for each IORING_OP_* operation
 io_cold_def    | io_uring/opdef.h | name, cleanup, fail handlers | io_uring/opdef.c | io_cold_defs[] array | Defines cold path handlers for each IORING_OP_* operation
 io_issue_defs[]| io_uring/opdef.c | Array of io_issue_def structs | io_uring_get_opcode | io_uring/opdef.c | Used to validate and describe supported operations
@@ -198,8 +194,6 @@ io_cold_defs[] | io_uring/opdef.h | extern array declaration | io_uring/opdef.c 
 |                |                    |                                                                      | io\_splice\_prep        | splice.h (declared) → splice.c (defined) | function parameter via `req → io_kiocb_to_cmd()` |
 |                |                    |                                                                      | io\_splice              | splice.h (declared) → splice.c (defined) | function parameter via `req → io_kiocb_to_cmd()` |
 |                |                    |                                                                      | io\_splice\_cleanup     | splice.h (declared) → splice.c (defined) | function parameter via `req → io_kiocb_to_cmd()` |
-| Structure name | Defined in         | Attributes                                                             | Caller Functions Source       | Source Caller      | Usage                              |
-| -------------- | ------------------ | ---------------------------------------------------------------------- | ----------------------------- | ------------------ | ---------------------------------- |
 | io\_sq\_data   | io\_uring/sqpoll.c | refcount\_t, atomic\_t, mutex, waitqueue\_head, list\_head             | io\_put\_sq\_data             | io\_uring/sqpoll.c | local variable, function parameter |
 |                |                    | ctx\_list, sqd\_list, sq\_thread\_idle, sq\_cpu, task\_pid, task\_tgid | io\_sq\_thread\_park          | io\_uring/sqpoll.c | function parameter                 |
 |                |                    | lock, sq\_thread\_idle, sq\_cpu, sq\_data, exited                      | io\_sq\_thread\_unpark        | io\_uring/sqpoll.c | local variable                     |
