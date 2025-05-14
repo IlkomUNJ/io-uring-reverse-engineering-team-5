@@ -78,4 +78,4 @@ io_notif_data  | io_uring/notif.h | file, uarg, next, head, account_pages, zc_re
 io_issue_def   | io_uring/opdef.h | needs_file, plug, ioprio, iopoll, buffer_select, hash_reg_file, unbound_nonreg_file, pollin, pollout, poll_exclusive, audit_skip, iopoll_queue, vectored, async_size | io_issue_defs | io_uring/opdef.c | local variable
 | | | | io_cold_defs | io_uring/opdef.c | local variable
 | | | | io_uring_op_supported | io_uring/opdef.c | function parameter
-| | | | io_uring_optable_init | io_uring/opdef.c | local variable                                                                               ```````````````````````````
+| | | | io_uring_optable_init | io_uring/opdef.c | local variable                                                          
