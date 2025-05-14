@@ -26,7 +26,7 @@ enum {
 	IO_SQ_THREAD_SHOULD_STOP = 0,
 	IO_SQ_THREAD_SHOULD_PARK,
 };
-
+//Melanjutkan eksekusi thread SQPOLL saat sedang dalam kondisi park.
 void io_sq_thread_unpark(struct io_sq_data *sqd)
 	__releases(&sqd->lock)
 {
@@ -42,7 +42,7 @@ void io_sq_thread_unpark(struct io_sq_data *sqd)
 	mutex_unlock(&sqd->lock);
 	wake_up(&sqd->wait);
 }
-
+//Menangguhkan sementara thread SQPOLL.
 void io_sq_thread_park(struct io_sq_data *sqd)
 	__acquires(&sqd->lock)
 {
@@ -54,7 +54,7 @@ void io_sq_thread_park(struct io_sq_data *sqd)
 	if (sqd->thread)
 		wake_up_process(sqd->thread);
 }
-
+//Mengakhiri thread SQPOLL secara bersih.
 void io_sq_thread_stop(struct io_sq_data *sqd)
 {
 	WARN_ON_ONCE(sqd->thread == current);
@@ -67,7 +67,7 @@ void io_sq_thread_stop(struct io_sq_data *sqd)
 	mutex_unlock(&sqd->lock);
 	wait_for_completion(&sqd->exited);
 }
-
+//Mengelola siklus hidup struktur data SQPOLL.
 void io_put_sq_data(struct io_sq_data *sqd)
 {
 	if (refcount_dec_and_test(&sqd->refs)) {
@@ -87,7 +87,7 @@ static __cold void io_sqd_update_thread_idle(struct io_sq_data *sqd)
 		sq_thread_idle = max(sq_thread_idle, ctx->sq_thread_idle);
 	sqd->sq_thread_idle = sq_thread_idle;
 }
-
+//Menjamin pembersihan thread SQPOLL saat konteks dihancurkan.
 void io_sq_thread_finish(struct io_ring_ctx *ctx)
 {
 	struct io_sq_data *sqd = ctx->sq_data;
@@ -102,7 +102,7 @@ void io_sq_thread_finish(struct io_ring_ctx *ctx)
 		ctx->sq_data = NULL;
 	}
 }
-
+//Mengizinkan beberapa konteks berbagi thread SQPOLL yang sama.
 static struct io_sq_data *io_attach_sq_data(struct io_uring_params *p)
 {
 	struct io_ring_ctx *ctx_attach;
@@ -124,7 +124,7 @@ static struct io_sq_data *io_attach_sq_data(struct io_uring_params *p)
 	refcount_inc(&sqd->refs);
 	return sqd;
 }
-
+//Menginisialisasi atau melampirkan thread SQPOLL ke suatu konteks.
 static struct io_sq_data *io_get_sq_data(struct io_uring_params *p,
 					 bool *attached)
 {
@@ -154,12 +154,12 @@ static struct io_sq_data *io_get_sq_data(struct io_uring_params *p,
 	init_completion(&sqd->exited);
 	return sqd;
 }
-
+//Menentukan apakah thread SQPOLL perlu memproses event.
 static inline bool io_sqd_events_pending(struct io_sq_data *sqd)
 {
 	return READ_ONCE(sqd->state);
 }
-
+//Menangani logika utama dari operasi thread SQPOLL.
 static int __io_sq_thread(struct io_ring_ctx *ctx, bool cap_entries)
 {
 	unsigned int to_submit;
@@ -197,7 +197,7 @@ static int __io_sq_thread(struct io_ring_ctx *ctx, bool cap_entries)
 
 	return ret;
 }
-
+//Mengelola transisi status dan penanganan sinyal untuk thread SQPOLL.
 static bool io_sqd_handle_event(struct io_sq_data *sqd)
 {
 	bool did_sig = false;
@@ -238,14 +238,14 @@ out:
 		task_work_run();
 	return count;
 }
-
+//Menentukan apakah thread SQPOLL perlu memproses task work.
 static bool io_sq_tw_pending(struct llist_node *retry_list)
 {
 	struct io_uring_task *tctx = current->io_uring;
 
 	return retry_list || !llist_empty(&tctx->task_list);
 }
-
+//Melacak durasi kerja aktif dari thread SQPOLL.
 static void io_sq_update_worktime(struct io_sq_data *sqd, struct rusage *start)
 {
 	struct rusage end;
@@ -256,7 +256,7 @@ static void io_sq_update_worktime(struct io_sq_data *sqd, struct rusage *start)
 
 	sqd->work_time += end.ru_stime.tv_usec + end.ru_stime.tv_sec * 1000000;
 }
-
+//Mengimplementasikan perilaku utama dari thread SQPOLL.
 static int io_sq_thread(void *data)
 {
 	struct llist_node *retry_list = NULL;
@@ -388,7 +388,7 @@ err_out:
 	complete(&sqd->exited);
 	do_exit(0);
 }
-
+//Menjamin submission queue tidak penuh sebelum menambahkan entri baru.
 void io_sqpoll_wait_sq(struct io_ring_ctx *ctx)
 {
 	DEFINE_WAIT(wait);
@@ -405,7 +405,7 @@ void io_sqpoll_wait_sq(struct io_ring_ctx *ctx)
 
 	finish_wait(&ctx->sqo_sq_wait, &wait);
 }
-
+//Menyiapkan thread SQPOLL untuk offload pemrosesan submission queue.
 __cold int io_sq_offload_create(struct io_ring_ctx *ctx,
 				struct io_uring_params *p)
 {
@@ -507,7 +507,7 @@ err:
 		put_task_struct(task_to_put);
 	return ret;
 }
-
+Menjamin thread SQPOLL berjalan pada CPU yang ditentukan.
 __cold int io_sqpoll_wq_cpu_affinity(struct io_ring_ctx *ctx,
 				     cpumask_var_t mask)
 {
