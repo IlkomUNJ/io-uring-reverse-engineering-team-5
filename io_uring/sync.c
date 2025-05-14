@@ -22,6 +22,10 @@ struct io_sync {
 	int				mode;
 };
 
+/*
+Mempersiapkan operasi dan memvalidasi parameter 
+sync_file_range dengan menandai permintaan sebagai asynchronous.
+*/
 int io_sfr_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 {
 	struct io_sync *sync = io_kiocb_to_cmd(req, struct io_sync);
@@ -37,6 +41,10 @@ int io_sfr_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 	return 0;
 }
 
+/*
+Melakukan sinkronisasi rentang file dengan memastikan 
+operasi berjalan dalam konteks blocking.
+*/
 int io_sync_file_range(struct io_kiocb *req, unsigned int issue_flags)
 {
 	struct io_sync *sync = io_kiocb_to_cmd(req, struct io_sync);
@@ -50,6 +58,10 @@ int io_sync_file_range(struct io_kiocb *req, unsigned int issue_flags)
 	return IOU_OK;
 }
 
+/*
+Memvalidasi parameter dan mempersiapkan operasi fsync 
+dengan mendukung sinkronisasi penuh atau metadata saja.
+*/
 int io_fsync_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 {
 	struct io_sync *sync = io_kiocb_to_cmd(req, struct io_sync);
@@ -67,6 +79,9 @@ int io_fsync_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 	return 0;
 }
 
+/*
+Menyinkronkan file
+*/
 int io_fsync(struct io_kiocb *req, unsigned int issue_flags)
 {
 	struct io_sync *sync = io_kiocb_to_cmd(req, struct io_sync);
@@ -82,6 +97,10 @@ int io_fsync(struct io_kiocb *req, unsigned int issue_flags)
 	return IOU_OK;
 }
 
+/*
+Memvalidasi parameter dan mempersiapkan operasi 
+fallocate dengan membaca offset, panjang, dan mode.
+*/
 int io_fallocate_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 {
 	struct io_sync *sync = io_kiocb_to_cmd(req, struct io_sync);
@@ -96,6 +115,10 @@ int io_fallocate_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 	return 0;
 }
 
+/*
+Mengalokasikan ruang file dan memicu 
+notifikasi modifikasi file jika berhasil.
+*/
 int io_fallocate(struct io_kiocb *req, unsigned int issue_flags)
 {
 	struct io_sync *sync = io_kiocb_to_cmd(req, struct io_sync);

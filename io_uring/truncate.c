@@ -15,11 +15,17 @@
 #include "io_uring.h"
 #include "truncate.h"
 
+/*
+Struktur yang menyimpan informasi file dan panjang baru untuk operasi truncate.
+*/
 struct io_ftrunc {
 	struct file			*file;
 	loff_t				len;
 };
 
+/*
+Mempersiapkan operasi truncate dengan memvalidasi parameter dan membaca panjang baru dari sqe.
+*/
 int io_ftruncate_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 {
 	struct io_ftrunc *ft = io_kiocb_to_cmd(req, struct io_ftrunc);
@@ -34,6 +40,10 @@ int io_ftruncate_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 	return 0;
 }
 
+/*
+Melakukan operasi truncate pada file dengan panjang yang ditentukan, 
+memastikan operasi berjalan dalam konteks blocking.
+*/
 int io_ftruncate(struct io_kiocb *req, unsigned int issue_flags)
 {
 	struct io_ftrunc *ft = io_kiocb_to_cmd(req, struct io_ftrunc);

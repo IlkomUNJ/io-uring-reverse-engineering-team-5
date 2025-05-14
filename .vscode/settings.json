@@ -1,5 +1,6 @@
 {
     "files.associations": {
-        "io-wq.h": "c"
+        "io-wq.h": "c",
+        "climits": "c"
     }
 }

@@ -16,6 +16,9 @@
 #include "rsrc.h"
 #include "uring_cmd.h"
 
+/*
+Membebaskan memori yang digunakan oleh perintah asinkron, termasuk vektor I/O.
+*/
 void io_cmd_cache_free(const void *entry)
 {
 	struct io_async_cmd *ac = (struct io_async_cmd *)entry;
@@ -24,6 +27,9 @@ void io_cmd_cache_free(const void *entry)
 	kfree(ac);
 }
 
+/*
+Membersihkan sumber daya terkait perintah io_uring, termasuk data asinkron dan cache.
+*/
 static void io_req_uring_cleanup(struct io_kiocb *req, unsigned int issue_flags)
 {
 	struct io_uring_cmd *ioucmd = io_kiocb_to_cmd(req, struct io_uring_cmd);
@@ -49,11 +55,17 @@ static void io_req_uring_cleanup(struct io_kiocb *req, unsigned int issue_flags)
 	}
 }
 
+/*
+Wrapper untuk membersihkan sumber daya perintah io_uring tanpa flag tambahan.
+*/
 void io_uring_cmd_cleanup(struct io_kiocb *req)
 {
 	io_req_uring_cleanup(req, 0);
 }
 
+/*
+Mencoba membatalkan perintah io_uring yang dapat dibatalkan berdasarkan konteks atau task tertentu.
+*/
 bool io_uring_try_cancel_uring_cmd(struct io_ring_ctx *ctx,
 				   struct io_uring_task *tctx, bool cancel_all)
 {
@@ -82,6 +94,9 @@ bool io_uring_try_cancel_uring_cmd(struct io_ring_ctx *ctx,
 	return ret;
 }
 
+/*
+Menghapus status "cancelable" dari perintah io_uring dan menghapusnya dari daftar hash.
+*/
 static void io_uring_cmd_del_cancelable(struct io_uring_cmd *cmd,
 		unsigned int issue_flags)
 {
@@ -106,6 +121,9 @@ static void io_uring_cmd_del_cancelable(struct io_uring_cmd *cmd,
  * with IO_URING_F_CANCEL, but it is driver's responsibility to deal
  * with race between io_uring canceling and normal completion.
  */
+/*
+Menandai perintah io_uring sebagai dapat dibatalkan dan menambahkannya ke daftar hash.
+*/
 void io_uring_cmd_mark_cancelable(struct io_uring_cmd *cmd,
 		unsigned int issue_flags)
 {
@@ -121,6 +139,9 @@ void io_uring_cmd_mark_cancelable(struct io_uring_cmd *cmd,
 }
 EXPORT_SYMBOL_GPL(io_uring_cmd_mark_cancelable);
 
+/*
+Menjalankan callback pekerjaan task untuk menyelesaikan perintah io_uring.
+*/
 static void io_uring_cmd_work(struct io_kiocb *req, io_tw_token_t tw)
 {
 	struct io_uring_cmd *ioucmd = io_kiocb_to_cmd(req, struct io_uring_cmd);
@@ -133,6 +154,9 @@ static void io_uring_cmd_work(struct io_kiocb *req, io_tw_token_t tw)
 	ioucmd->task_work_cb(ioucmd, flags);
 }
 
+/*
+Menjadwalkan pekerjaan task untuk perintah io_uring dengan callback yang ditentukan.
+*/
 void __io_uring_cmd_do_in_task(struct io_uring_cmd *ioucmd,
 			void (*task_work_cb)(struct io_uring_cmd *, unsigned),
 			unsigned flags)
@@ -145,6 +169,9 @@ void __io_uring_cmd_do_in_task(struct io_uring_cmd *ioucmd,
 }
 EXPORT_SYMBOL_GPL(__io_uring_cmd_do_in_task);
 
+/*
+Menyimpan data tambahan dalam entri CQE untuk perintah io_uring.
+*/
 static inline void io_req_set_cqe32_extra(struct io_kiocb *req,
 					  u64 extra1, u64 extra2)
 {
@@ -156,6 +183,9 @@ static inline void io_req_set_cqe32_extra(struct io_kiocb *req,
  * Called by consumers of io_uring_cmd, if they originally returned
  * -EIOCBQUEUED upon receiving the command.
  */
+/*
+Menyelesaikan perintah io_uring, termasuk membersihkan sumber daya dan menangani hasil.
+*/
 void io_uring_cmd_done(struct io_uring_cmd *ioucmd, ssize_t ret, u64 res2,
 		       unsigned issue_flags)
 {
@@ -184,6 +214,9 @@ void io_uring_cmd_done(struct io_uring_cmd *ioucmd, ssize_t ret, u64 res2,
 }
 EXPORT_SYMBOL_GPL(io_uring_cmd_done);
 
+/*
+Menyiapkan data asinkron untuk perintah io_uring dan memastikan stabilitas data SQE.
+*/
 static int io_uring_cmd_prep_setup(struct io_kiocb *req,
 				   const struct io_uring_sqe *sqe)
 {
@@ -210,6 +243,9 @@ static int io_uring_cmd_prep_setup(struct io_kiocb *req,
 	return 0;
 }
 
+/*
+Mempersiapkan perintah io_uring dengan memvalidasi flag dan parameter SQE.
+*/
 int io_uring_cmd_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 {
 	struct io_uring_cmd *ioucmd = io_kiocb_to_cmd(req, struct io_uring_cmd);
@@ -229,6 +265,9 @@ int io_uring_cmd_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 	return io_uring_cmd_prep_setup(req, sqe);
 }
 
+/*
+Menjalankan perintah io_uring dengan memanggil handler driver dan menangani hasilnya.
+*/
 int io_uring_cmd(struct io_kiocb *req, unsigned int issue_flags)
 {
 	struct io_uring_cmd *ioucmd = io_kiocb_to_cmd(req, struct io_uring_cmd);
@@ -266,6 +305,9 @@ int io_uring_cmd(struct io_kiocb *req, unsigned int issue_flags)
 	return IOU_OK;
 }
 
+/*
+Mengimpor buffer tetap untuk perintah io_uring dan menginisialisasi iterasi I/O.
+*/
 int io_uring_cmd_import_fixed(u64 ubuf, unsigned long len, int rw,
 			      struct iov_iter *iter,
 			      struct io_uring_cmd *ioucmd,
@@ -277,6 +319,9 @@ int io_uring_cmd_import_fixed(u64 ubuf, unsigned long len, int rw,
 }
 EXPORT_SYMBOL_GPL(io_uring_cmd_import_fixed);
 
+/*
+Mengimpor vektor tetap untuk perintah io_uring dan menginisialisasi iterasi I/O.
+*/
 int io_uring_cmd_import_fixed_vec(struct io_uring_cmd *ioucmd,
 				  const struct iovec __user *uvec,
 				  size_t uvec_segs,
@@ -296,6 +341,9 @@ int io_uring_cmd_import_fixed_vec(struct io_uring_cmd *ioucmd,
 }
 EXPORT_SYMBOL_GPL(io_uring_cmd_import_fixed_vec);
 
+/*
+Menjadwalkan perintah io_uring untuk dijalankan secara blocking di workqueue.
+*/
 void io_uring_cmd_issue_blocking(struct io_uring_cmd *ioucmd)
 {
 	struct io_kiocb *req = cmd_to_io_kiocb(ioucmd);
@@ -303,6 +351,9 @@ void io_uring_cmd_issue_blocking(struct io_uring_cmd *ioucmd)
 	io_req_queue_iowq(req);
 }
 
+/*
+Mengambil opsi socket menggunakan perintah io_uring dengan dukungan kompatibilitas.
+*/
 static inline int io_uring_cmd_getsockopt(struct socket *sock,
 					  struct io_uring_cmd *cmd,
 					  unsigned int issue_flags)
@@ -330,6 +381,9 @@ static inline int io_uring_cmd_getsockopt(struct socket *sock,
 	return optlen;
 }
 
+/*
+Mengatur opsi socket menggunakan perintah io_uring dengan dukungan kompatibilitas.
+*/
 static inline int io_uring_cmd_setsockopt(struct socket *sock,
 					  struct io_uring_cmd *cmd,
 					  unsigned int issue_flags)
@@ -351,6 +405,9 @@ static inline int io_uring_cmd_setsockopt(struct socket *sock,
 }
 
 #if defined(CONFIG_NET)
+/*
+Menangani operasi socket tertentu melalui perintah io_uring.
+*/
 int io_uring_cmd_sock(struct io_uring_cmd *cmd, unsigned int issue_flags)
 {
 	struct socket *sock = cmd->file->private_data;
