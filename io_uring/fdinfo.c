@@ -16,6 +16,7 @@
 #include "rsrc.h"
 
 #ifdef CONFIG_PROC_FS
+
 static __cold int io_uring_show_cred(struct seq_file *m, unsigned int id,
 		const struct cred *cred)
 {
@@ -47,6 +48,9 @@ static __cold int io_uring_show_cred(struct seq_file *m, unsigned int id,
 }
 
 #ifdef CONFIG_NET_RX_BUSY_POLL
+/**
+ * Menampilkan informasi credential (UID, GID, grup, capabilities) ke seq_file.
+ */
 static __cold void common_tracking_show_fdinfo(struct io_ring_ctx *ctx,
 					       struct seq_file *m,
 					       const char *tracking_strategy)
@@ -59,6 +63,7 @@ static __cold void common_tracking_show_fdinfo(struct io_ring_ctx *ctx,
 	else
 		seq_puts(m, "napi_prefer_busy_poll:\tfalse\n");
 }
+
 
 static __cold void napi_show_fdinfo(struct io_ring_ctx *ctx,
 				    struct seq_file *m)
@@ -80,6 +85,9 @@ static __cold void napi_show_fdinfo(struct io_ring_ctx *ctx,
 	}
 }
 #else
+/**
+ * Dummy jika NAPI tidak diaktifkan.
+ */
 static inline void napi_show_fdinfo(struct io_ring_ctx *ctx,
 				    struct seq_file *m)
 {

@@ -32,6 +32,9 @@ struct io_waitid {
 	struct waitid_info info;
 };
 
+/*
+Membebaskan sumber daya terkait permintaan waitid.
+*/
 static void io_waitid_free(struct io_kiocb *req)
 {
 	struct io_waitid_async *iwa = req->async_data;
@@ -42,6 +45,9 @@ static void io_waitid_free(struct io_kiocb *req)
 	req->flags &= ~REQ_F_ASYNC_DATA;
 }
 
+/*
+Menyalin informasi sinyal untuk mode kompatibilitas.
+*/
 static bool io_waitid_compat_copy_si(struct io_waitid *iw, int signo)
 {
 	struct compat_siginfo __user *infop;
@@ -67,6 +73,9 @@ Efault:
 	goto done;
 }
 
+/*
+Menyalin informasi sinyal ke struktur siginfo atau compat_siginfo berdasarkan mode.
+*/
 static bool io_waitid_copy_si(struct io_kiocb *req, int signo)
 {
 	struct io_waitid *iw = io_kiocb_to_cmd(req, struct io_waitid);
@@ -96,6 +105,9 @@ Efault:
 	goto done;
 }
 
+/*
+Menyelesaikan permintaan waitid dengan menyalin informasi sinyal dan membebaskan sumber daya.
+*/
 static int io_waitid_finish(struct io_kiocb *req, int ret)
 {
 	int signo = 0;
@@ -111,6 +123,9 @@ static int io_waitid_finish(struct io_kiocb *req, int ret)
 	return ret;
 }
 
+/*
+Menyelesaikan permintaan waitid dengan memproses hasil dan menghapusnya dari daftar hash.
+*/
 static void io_waitid_complete(struct io_kiocb *req, int ret)
 {
 	struct io_waitid *iw = io_kiocb_to_cmd(req, struct io_waitid);
@@ -128,6 +143,9 @@ static void io_waitid_complete(struct io_kiocb *req, int ret)
 	io_req_set_res(req, ret, 0);
 }
 
+/*
+Membatalkan permintaan waitid dengan menandainya sebagai dibatalkan dan menghapusnya dari antrean.
+*/
 static bool __io_waitid_cancel(struct io_kiocb *req)
 {
 	struct io_waitid *iw = io_kiocb_to_cmd(req, struct io_waitid);
@@ -151,18 +169,28 @@ static bool __io_waitid_cancel(struct io_kiocb *req)
 	return true;
 }
 
+/*
+Membatalkan permintaan waitid tertentu berdasarkan data pembatalan yang diberikan.
+*/
 int io_waitid_cancel(struct io_ring_ctx *ctx, struct io_cancel_data *cd,
 		     unsigned int issue_flags)
 {
 	return io_cancel_remove(ctx, cd, issue_flags, &ctx->waitid_list, __io_waitid_cancel);
 }
 
+/*
+Membatalkan semua permintaan waitid yang terkait dengan task tertentu 
+atau semua permintaan jika diminta.
+*/
 bool io_waitid_remove_all(struct io_ring_ctx *ctx, struct io_uring_task *tctx,
 			  bool cancel_all)
 {
 	return io_cancel_remove_all(ctx, tctx, &ctx->waitid_list, cancel_all, __io_waitid_cancel);
 }
 
+/*
+Mengurangi referensi permintaan waitid dan menjadwalkan pekerjaan task jika perlu.
+*/
 static inline bool io_waitid_drop_issue_ref(struct io_kiocb *req)
 {
 	struct io_waitid *iw = io_kiocb_to_cmd(req, struct io_waitid);
@@ -181,6 +209,9 @@ static inline bool io_waitid_drop_issue_ref(struct io_kiocb *req)
 	return true;
 }
 
+/*
+Callback untuk menangani permintaan waitid, termasuk retry jika terjadi gangguan.
+*/
 static void io_waitid_cb(struct io_kiocb *req, io_tw_token_t tw)
 {
 	struct io_waitid_async *iwa = req->async_data;
@@ -220,6 +251,9 @@ static void io_waitid_cb(struct io_kiocb *req, io_tw_token_t tw)
 	io_req_task_complete(req, tw);
 }
 
+/*
+Fungsi callback untuk menangani entri antrean tunggu waitid saat kondisi terpenuhi.
+*/
 static int io_waitid_wait(struct wait_queue_entry *wait, unsigned mode,
 			  int sync, void *key)
 {
@@ -242,6 +276,9 @@ static int io_waitid_wait(struct wait_queue_entry *wait, unsigned mode,
 	return 1;
 }
 
+/*
+Mempersiapkan permintaan waitid dengan memvalidasi parameter dan mengalokasikan data asinkron.
+*/
 int io_waitid_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 {
 	struct io_waitid *iw = io_kiocb_to_cmd(req, struct io_waitid);
@@ -262,6 +299,9 @@ int io_waitid_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 	return 0;
 }
 
+/*
+Menangani permintaan waitid, termasuk menambahkan ke antrean tunggu dan memproses hasilnya.
+*/
 int io_waitid(struct io_kiocb *req, unsigned int issue_flags)
 {
 	struct io_waitid *iw = io_kiocb_to_cmd(req, struct io_waitid);

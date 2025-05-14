@@ -23,35 +23,56 @@ struct io_notif_data {
 	bool			zc_copied;
 };
 
+/** 
+ * Mengalokasikan struktur notifikasi untuk konteks io_uring. 
+ * Digunakan untuk membuat notifikasi baru untuk operasi IO.
+ */
 struct io_kiocb *io_alloc_notif(struct io_ring_ctx *ctx);
-void io_tx_ubuf_complete(struct sk_buff *skb, struct ubuf_info *uarg,
-			 bool success);
 
+/** 
+ * Menyelesaikan buffer pengguna untuk transmisi jaringan. 
+ * Digunakan untuk menangani penyelesaian buffer setelah transmisi.
+ */
+void io_tx_ubuf_complete(struct sk_buff *skb, struct ubuf_info *uarg,
+                         bool success);
+
+/** 
+ * Mengonversi struktur io_kiocb menjadi data notifikasi. 
+ * Digunakan untuk mengakses data notifikasi dari struktur io_kiocb.
+ */
 static inline struct io_notif_data *io_notif_to_data(struct io_kiocb *notif)
 {
-	return io_kiocb_to_cmd(notif, struct io_notif_data);
+    return io_kiocb_to_cmd(notif, struct io_notif_data);
 }
 
+/** 
+ * Membersihkan buffer pengguna untuk notifikasi. 
+ * Digunakan untuk memastikan buffer pengguna selesai dengan sukses.
+ */
 static inline void io_notif_flush(struct io_kiocb *notif)
-	__must_hold(&notif->ctx->uring_lock)
+    __must_hold(&notif->ctx->uring_lock)
 {
-	struct io_notif_data *nd = io_notif_to_data(notif);
+    struct io_notif_data *nd = io_notif_to_data(notif);
 
-	io_tx_ubuf_complete(NULL, &nd->uarg, true);
+    io_tx_ubuf_complete(NULL, &nd->uarg, true);
 }
 
+/** 
+ * Mengelola penggunaan memori untuk notifikasi. 
+ * Digunakan untuk mengalokasikan memori yang diperlukan untuk operasi IO.
+ */
 static inline int io_notif_account_mem(struct io_kiocb *notif, unsigned len)
 {
-	struct io_ring_ctx *ctx = notif->ctx;
-	struct io_notif_data *nd = io_notif_to_data(notif);
-	unsigned nr_pages = (len >> PAGE_SHIFT) + 2;
-	int ret;
+    struct io_ring_ctx *ctx = notif->ctx;
+    struct io_notif_data *nd = io_notif_to_data(notif);
+    unsigned nr_pages = (len >> PAGE_SHIFT) + 2;
+    int ret;
 
-	if (ctx->user) {
-		ret = __io_account_mem(ctx->user, nr_pages);
-		if (ret)
-			return ret;
-		nd->account_pages += nr_pages;
-	}
-	return 0;
+    if (ctx->user) {
+        ret = __io_account_mem(ctx->user, nr_pages);
+        if (ret)
+            return ret;
+        nd->account_pages += nr_pages;
+    }
+    return 0;
 }

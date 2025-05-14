@@ -145,19 +145,47 @@ struct io_cb_cancel_data {
 	bool cancel_all;
 };
 
+/** 
+ * Membuat worker baru untuk io_wq. 
+ * Digunakan untuk menambah kapasitas pemrosesan pekerjaan.
+ */
 static bool create_io_worker(struct io_wq *wq, struct io_wq_acct *acct);
+/** 
+ * Mengurangi jumlah worker yang sedang berjalan. 
+ * Digunakan untuk mengelola jumlah worker aktif.
+ */
 static void io_wq_dec_running(struct io_worker *worker);
+/** 
+ * Membatalkan pekerjaan yang tertunda berdasarkan kriteria tertentu. 
+ * Digunakan untuk menghentikan pekerjaan yang tidak diperlukan.
+ */
 static bool io_acct_cancel_pending_work(struct io_wq *wq,
 					struct io_wq_acct *acct,
 					struct io_cb_cancel_data *match);
+/** 
+ * Callback untuk membuat worker baru. 
+ * Digunakan untuk melanjutkan proses pembuatan worker.
+ */
 static void create_worker_cb(struct callback_head *cb);
+/** 
+ * Membatalkan pekerjaan yang sedang dibuat oleh task_work. 
+ * Digunakan untuk membatalkan pekerjaan yang belum selesai dibuat.
+ */
 static void io_wq_cancel_tw_create(struct io_wq *wq);
 
+/** 
+ * Mengambil referensi pada worker jika masih aktif. 
+ * Digunakan untuk memastikan worker tidak dihapus saat sedang digunakan.
+ */
 static bool io_worker_get(struct io_worker *worker)
 {
 	return refcount_inc_not_zero(&worker->ref);
 }
 
+/** 
+ * Melepaskan referensi pada worker. 
+ * Digunakan untuk mengelola siklus hidup worker.
+ */
 static void io_worker_release(struct io_worker *worker)
 {
 	if (refcount_dec_and_test(&worker->ref))
@@ -169,6 +197,10 @@ static inline struct io_wq_acct *io_get_acct(struct io_wq *wq, bool bound)
 	return &wq->acct[bound ? IO_WQ_ACCT_BOUND : IO_WQ_ACCT_UNBOUND];
 }
 
+/** 
+ * Mendapatkan akun worker berdasarkan flag pekerjaan. 
+ * Digunakan untuk menentukan akun yang sesuai untuk pekerjaan.
+ */
 static inline struct io_wq_acct *io_work_get_acct(struct io_wq *wq,
 						  unsigned int work_flags)
 {
@@ -180,12 +212,20 @@ static inline struct io_wq_acct *io_wq_get_acct(struct io_worker *worker)
 	return worker->acct;
 }
 
+/** 
+ * Mengurangi referensi worker pada io_wq. 
+ * Digunakan untuk membersihkan worker yang tidak lagi diperlukan.
+ */
 static void io_worker_ref_put(struct io_wq *wq)
 {
 	if (atomic_dec_and_test(&wq->worker_refs))
 		complete(&wq->worker_done);
 }
 
+/** 
+ * Memeriksa apakah worker telah dihentikan. 
+ * Digunakan untuk memastikan worker tidak lagi aktif.
+ */
 bool io_wq_worker_stopped(void)
 {
 	struct io_worker *worker = current->worker_private;
@@ -196,6 +236,10 @@ bool io_wq_worker_stopped(void)
 	return test_bit(IO_WQ_BIT_EXIT, &worker->wq->state);
 }
 
+/** 
+ * Callback untuk membatalkan worker. 
+ * Digunakan untuk membersihkan worker yang sedang dihentikan.
+ */
 static void io_worker_cancel_cb(struct io_worker *worker)
 {
 	struct io_wq_acct *acct = io_wq_get_acct(worker);
@@ -210,6 +254,10 @@ static void io_worker_cancel_cb(struct io_worker *worker)
 	io_worker_release(worker);
 }
 
+/** 
+ * Memeriksa apakah callback cocok dengan worker tertentu. 
+ * Digunakan untuk mencocokkan pekerjaan dengan worker.
+ */
 static bool io_task_worker_match(struct callback_head *cb, void *data)
 {
 	struct io_worker *worker;
@@ -220,6 +268,10 @@ static bool io_task_worker_match(struct callback_head *cb, void *data)
 	return worker == data;
 }
 
+/** 
+ * Menghentikan worker dan membersihkan sumber daya terkait. 
+ * Digunakan untuk menghapus worker yang tidak lagi diperlukan.
+ */
 static void io_worker_exit(struct io_worker *worker)
 {
 	struct io_wq *wq = worker->wq;
@@ -642,6 +694,10 @@ static void io_worker_handle_work(struct io_wq_acct *acct,
 	} while (1);
 }
 
+/** 
+ * Fungsi utama untuk worker io_wq. 
+ * Digunakan untuk menjalankan loop utama worker.
+ */
 static int io_wq_worker(void *data)
 {
 	struct io_worker *worker = data;
@@ -742,6 +798,10 @@ void io_wq_worker_sleeping(struct task_struct *tsk)
 	io_wq_dec_running(worker);
 }
 
+/** 
+ * Menginisialisasi worker baru untuk io_wq. 
+ * Digunakan untuk menyiapkan worker sebelum digunakan.
+ */
 static void io_init_new_worker(struct io_wq *wq, struct io_wq_acct *acct, struct io_worker *worker,
 			       struct task_struct *tsk)
 {
@@ -848,6 +908,10 @@ static void io_workqueue_create(struct work_struct *work)
 		kfree(worker);
 }
 
+/** 
+ * Membuat worker baru untuk io_wq. 
+ * Digunakan untuk menambah kapasitas pemrosesan pekerjaan.
+ */
 static bool create_io_worker(struct io_wq *wq, struct io_wq_acct *acct)
 {
 	struct io_worker *worker;
@@ -965,6 +1029,10 @@ static bool io_wq_work_match_item(struct io_wq_work *work, void *data)
 	return work == data;
 }
 
+/** 
+ * Menambahkan pekerjaan ke antrean io_wq. 
+ * Digunakan untuk menjadwalkan pekerjaan untuk diproses.
+ */
 void io_wq_enqueue(struct io_wq *wq, struct io_wq_work *work)
 {
 	unsigned int work_flags = atomic_read(&work->flags);
@@ -1134,6 +1202,10 @@ static void io_wq_cancel_running_work(struct io_wq *wq,
 	rcu_read_unlock();
 }
 
+/** 
+ * Membatalkan pekerjaan yang sedang berjalan atau tertunda. 
+ * Digunakan untuk menghentikan pekerjaan berdasarkan kriteria tertentu.
+ */
 enum io_wq_cancel io_wq_cancel_cb(struct io_wq *wq, work_cancel_fn *cancel,
 				  void *data, bool cancel_all)
 {
@@ -1190,6 +1262,10 @@ static int io_wq_hash_wake(struct wait_queue_entry *wait, unsigned mode,
 	return 1;
 }
 
+/** 
+ * Membuat instance io_wq baru. 
+ * Digunakan untuk menginisialisasi struktur io_wq.
+ */
 struct io_wq *io_wq_create(unsigned bounded, struct io_wq_data *data)
 {
 	int ret, i;
@@ -1257,6 +1333,10 @@ static bool io_task_work_match(struct callback_head *cb, void *data)
 	return worker->wq == data;
 }
 
+/** 
+ * Memulai proses penghentian io_wq. 
+ * Digunakan untuk menandai bahwa io_wq sedang dihentikan.
+ */
 void io_wq_exit_start(struct io_wq *wq)
 {
 	set_bit(IO_WQ_BIT_EXIT, &wq->state);
@@ -1280,6 +1360,10 @@ static void io_wq_cancel_tw_create(struct io_wq *wq)
 	}
 }
 
+/** 
+ * Menghentikan semua worker pada io_wq. 
+ * Digunakan untuk membersihkan worker sebelum io_wq dihancurkan.
+ */
 static void io_wq_exit_workers(struct io_wq *wq)
 {
 	if (!wq->task)
@@ -1301,6 +1385,10 @@ static void io_wq_exit_workers(struct io_wq *wq)
 	wq->task = NULL;
 }
 
+/** 
+ * Menghancurkan instance io_wq. 
+ * Digunakan untuk membersihkan semua sumber daya terkait io_wq.
+ */
 static void io_wq_destroy(struct io_wq *wq)
 {
 	struct io_cb_cancel_data match = {
@@ -1315,6 +1403,10 @@ static void io_wq_destroy(struct io_wq *wq)
 	kfree(wq);
 }
 
+/** 
+ * Menghentikan dan menghancurkan io_wq. 
+ * Digunakan untuk membersihkan semua sumber daya sebelum keluar.
+ */
 void io_wq_put_and_exit(struct io_wq *wq)
 {
 	WARN_ON_ONCE(!test_bit(IO_WQ_BIT_EXIT, &wq->state));
@@ -1433,6 +1525,10 @@ int io_wq_max_workers(struct io_wq *wq, int *new_count)
 	return 0;
 }
 
+/** 
+ * Inisialisasi subsistem io_wq. 
+ * Digunakan untuk menyiapkan state awal io_wq.
+ */
 static __init int io_wq_init(void)
 {
 	int ret;

@@ -50,33 +50,45 @@ struct io_imu_folio_data {
 	unsigned int	folio_shift;
 	unsigned int	nr_folios;
 };
-
+/* Menginisialisasi cache untuk node sumber daya dan buffer yang dipetakan */
 bool io_rsrc_cache_init(struct io_ring_ctx *ctx);
+/* Membebaskan cache untuk node sumber daya dan buffer yang dipetakan */
 void io_rsrc_cache_free(struct io_ring_ctx *ctx);
+/* Mengalokasikan node sumber daya untuk file atau buffer */
 struct io_rsrc_node *io_rsrc_node_alloc(struct io_ring_ctx *ctx, int type);
+/* Membebaskan node sumber daya dan sumber daya terkait */
 void io_free_rsrc_node(struct io_ring_ctx *ctx, struct io_rsrc_node *node);
+/* Membebaskan semua node sumber daya dalam data sumber daya */
 void io_rsrc_data_free(struct io_ring_ctx *ctx, struct io_rsrc_data *data);
+/* Mengalokasikan memori untuk sejumlah node sumber daya */
 int io_rsrc_data_alloc(struct io_rsrc_data *data, unsigned nr);
-
+/* Mengambil node buffer terkait dengan permintaan */
 struct io_rsrc_node *io_find_buf_node(struct io_kiocb *req,
 				      unsigned issue_flags);
+/* Mengimpor buffer terdaftar ke dalam iterator I/O */
 int io_import_reg_buf(struct io_kiocb *req, struct iov_iter *iter,
 			u64 buf_addr, size_t len, int ddir,
 			unsigned issue_flags);
+/* Mengimpor vektor buffer terdaftar ke dalam iterator I/O */
 int io_import_reg_vec(int ddir, struct iov_iter *iter,
 			struct io_kiocb *req, struct iou_vec *vec,
 			unsigned nr_iovs, unsigned issue_flags);
+/* Mempersiapkan vektor I/O untuk buffer terdaftar */
 int io_prep_reg_iovec(struct io_kiocb *req, struct iou_vec *iv,
 			const struct iovec __user *uvec, size_t uvec_segs);
-
+/* Menduplikasi buffer yang terdaftar dari konteks io_uring lain */
 int io_register_clone_buffers(struct io_ring_ctx *ctx, void __user *arg);
+/* Mencopot pendaftaran semua buffer dari konteks io_uring */
 int io_sqe_buffers_unregister(struct io_ring_ctx *ctx);
+/* Mendaftarkan buffer ke dalam konteks io_uring */
 int io_sqe_buffers_register(struct io_ring_ctx *ctx, void __user *arg,
 			    unsigned int nr_args, u64 __user *tags);
+/* Mencopot pendaftaran semua deskriptor file dari konteks io_uring */
 int io_sqe_files_unregister(struct io_ring_ctx *ctx);
+/* Mendaftarkan deskriptor file ke dalam konteks io_uring */
 int io_sqe_files_register(struct io_ring_ctx *ctx, void __user *arg,
 			  unsigned nr_args, u64 __user *tags);
-
+/* Memperbarui deskriptor file yang terdaftar */
 int io_register_files_update(struct io_ring_ctx *ctx, void __user *arg,
 			     unsigned nr_args);
 int io_register_rsrc_update(struct io_ring_ctx *ctx, void __user *arg,

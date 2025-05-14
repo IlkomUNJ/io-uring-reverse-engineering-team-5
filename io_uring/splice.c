@@ -23,7 +23,7 @@ struct io_splice {
 	unsigned int			flags;
 	struct io_rsrc_node		*rsrc_node;
 };
-
+//Memvalidasi dan mengatur operasi splice, memastikan flag dan parameter sudah sesuai.
 static int __io_splice_prep(struct io_kiocb *req,
 			    const struct io_uring_sqe *sqe)
 {
@@ -39,14 +39,14 @@ static int __io_splice_prep(struct io_kiocb *req,
 	req->flags |= REQ_F_FORCE_ASYNC;
 	return 0;
 }
-
+//Mengatur operasi tee, yang menduplikasi data antar pipe tanpa mengonsumsinya.
 int io_tee_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 {
 	if (READ_ONCE(sqe->splice_off_in) || READ_ONCE(sqe->off))
 		return -EINVAL;
 	return __io_splice_prep(req, sqe);
 }
-
+//Menjamin pembersihan yang tepat setelah operasi splice selesai.
 void io_splice_cleanup(struct io_kiocb *req)
 {
 	struct io_splice *sp = io_kiocb_to_cmd(req, struct io_splice);
@@ -54,7 +54,7 @@ void io_splice_cleanup(struct io_kiocb *req)
 	if (sp->rsrc_node)
 		io_put_rsrc_node(req->ctx, sp->rsrc_node);
 }
-
+//Menyediakan file yang sesuai untuk operasi splice berdasarkan flag yang diberikan.
 static struct file *io_splice_get_file(struct io_kiocb *req,
 				       unsigned int issue_flags)
 {
@@ -77,7 +77,7 @@ static struct file *io_splice_get_file(struct io_kiocb *req,
 	io_ring_submit_unlock(ctx, issue_flags);
 	return file;
 }
-
+//Mengimplementasikan logika inti dari operasi tee di io_uring.
 int io_tee(struct io_kiocb *req, unsigned int issue_flags)
 {
 	struct io_splice *sp = io_kiocb_to_cmd(req, struct io_splice);
@@ -105,7 +105,7 @@ done:
 	io_req_set_res(req, ret, 0);
 	return IOU_OK;
 }
-
+//Mengatur operasi splice, yang memindahkan data antar file descriptor.
 int io_splice_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 {
 	struct io_splice *sp = io_kiocb_to_cmd(req, struct io_splice);
@@ -114,7 +114,7 @@ int io_splice_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 	sp->off_out = READ_ONCE(sqe->off);
 	return __io_splice_prep(req, sqe);
 }
-
+// Mengimplementasikan logika inti dari operasi splice di io_uring.
 int io_splice(struct io_kiocb *req, unsigned int issue_flags)
 {
 	struct io_splice *sp = io_kiocb_to_cmd(req, struct io_splice);

@@ -64,7 +64,9 @@ check_seq:
 
 	return true;
 }
-
+/**
+ * Callback untuk membatalkan permintaan di io-wq.
+ */
 static bool io_cancel_cb(struct io_wq_work *work, void *data)
 {
 	struct io_kiocb *req = container_of(work, struct io_kiocb, work);
@@ -72,7 +74,9 @@ static bool io_cancel_cb(struct io_wq_work *work, void *data)
 
 	return io_cancel_req_match(req, cd);
 }
-
+/**
+ * Membatalkan satu permintaan async pada task io_uring.
+ */
 static int io_async_cancel_one(struct io_uring_task *tctx,
 			       struct io_cancel_data *cd)
 {
@@ -99,7 +103,9 @@ static int io_async_cancel_one(struct io_uring_task *tctx,
 
 	return ret;
 }
-
+/**
+ * Mencoba membatalkan permintaan pada berbagai sumber (async, poll, waitid, futex, timeout).
+ */	
 int io_try_cancel(struct io_uring_task *tctx, struct io_cancel_data *cd,
 		  unsigned issue_flags)
 {
@@ -134,7 +140,9 @@ int io_try_cancel(struct io_uring_task *tctx, struct io_cancel_data *cd,
 	spin_unlock(&ctx->completion_lock);
 	return ret;
 }
-
+/**
+ * Mempersiapkan permintaan async cancel dari sqe.
+ */
 int io_async_cancel_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 {
 	struct io_cancel *cancel = io_kiocb_to_cmd(req, struct io_cancel);
@@ -161,7 +169,9 @@ int io_async_cancel_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 
 	return 0;
 }
-
+/**
+ * Membatalkan permintaan async pada satu atau semua task io_uring.
+ */
 static int __io_async_cancel(struct io_cancel_data *cd,
 			     struct io_uring_task *tctx,
 			     unsigned int issue_flags)
@@ -194,7 +204,9 @@ static int __io_async_cancel(struct io_cancel_data *cd,
 	io_ring_submit_unlock(ctx, issue_flags);
 	return all ? nr : ret;
 }
-
+/**
+ * Menjalankan pembatalan permintaan async dari SQE.
+ */
 int io_async_cancel(struct io_kiocb *req, unsigned int issue_flags)
 {
 	struct io_cancel *cancel = io_kiocb_to_cmd(req, struct io_cancel);
@@ -231,7 +243,9 @@ done:
 	io_req_set_res(req, ret, 0);
 	return IOU_OK;
 }
-
+/**
+ * Membatalkan permintaan sync, termasuk lookup file jika fixed file.
+ */
 static int __io_sync_cancel(struct io_uring_task *tctx,
 			    struct io_cancel_data *cd, int fd)
 {
@@ -252,7 +266,9 @@ static int __io_sync_cancel(struct io_uring_task *tctx,
 
 	return __io_async_cancel(cd, tctx, 0);
 }
-
+/**
+ * Menjalankan pembatalan permintaan secara sinkron dari userspace.
+ */
 int io_sync_cancel(struct io_ring_ctx *ctx, void __user *arg)
 	__must_hold(&ctx->uring_lock)
 {
@@ -341,7 +357,9 @@ out:
 		fput(file);
 	return ret;
 }
-
+/**
+ * Menghapus semua permintaan pada list yang cocok dengan task.
+ */
 bool io_cancel_remove_all(struct io_ring_ctx *ctx, struct io_uring_task *tctx,
 			  struct hlist_head *list, bool cancel_all,
 			  bool (*cancel)(struct io_kiocb *))
@@ -362,7 +380,9 @@ bool io_cancel_remove_all(struct io_ring_ctx *ctx, struct io_uring_task *tctx,
 
 	return found;
 }
-
+/**
+ * Menghapus permintaan pada list yang cocok dengan data pembatalan.
+ */
 int io_cancel_remove(struct io_ring_ctx *ctx, struct io_cancel_data *cd,
 		     unsigned int issue_flags, struct hlist_head *list,
 		     bool (*cancel)(struct io_kiocb *))

@@ -19,7 +19,7 @@ struct io_statx {
 	struct filename			*filename;
 	struct statx __user		*buffer;
 };
-
+//Mengatur operasi statx, termasuk memvalidasi parameter, mengambil nama file, serta menandai permintaan untuk pembersihan dan eksekusi asynchronous.
 int io_statx_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 {
 	struct io_statx *sx = io_kiocb_to_cmd(req, struct io_statx);
@@ -49,7 +49,7 @@ int io_statx_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 	req->flags |= REQ_F_FORCE_ASYNC;
 	return 0;
 }
-
+//Mengimplementasikan logika utama untuk operasi statx dalam io_uring.
 int io_statx(struct io_kiocb *req, unsigned int issue_flags)
 {
 	struct io_statx *sx = io_kiocb_to_cmd(req, struct io_statx);
@@ -61,7 +61,7 @@ int io_statx(struct io_kiocb *req, unsigned int issue_flags)
 	io_req_set_res(req, ret, 0);
 	return IOU_OK;
 }
-
+//Menjamin bahwa semua sumber daya dibersihkan dengan benar setelah operasi statx selesai dijalankan.
 void io_statx_cleanup(struct io_kiocb *req)
 {
 	struct io_statx *sx = io_kiocb_to_cmd(req, struct io_statx);

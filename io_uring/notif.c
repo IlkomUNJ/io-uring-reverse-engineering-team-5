@@ -11,6 +11,10 @@
 
 static const struct ubuf_info_ops io_ubuf_ops;
 
+/** 
+ * Menyelesaikan pekerjaan task_work untuk notifikasi. 
+ * Digunakan untuk memproses notifikasi yang telah selesai.
+ */
 static void io_notif_tw_complete(struct io_kiocb *notif, io_tw_token_t tw)
 {
 	struct io_notif_data *nd = io_notif_to_data(notif);
@@ -33,6 +37,10 @@ static void io_notif_tw_complete(struct io_kiocb *notif, io_tw_token_t tw)
 	} while (nd);
 }
 
+/** 
+ * Menyelesaikan buffer pengguna untuk transmisi jaringan. 
+ * Digunakan untuk menangani penyelesaian buffer setelah transmisi.
+ */
 void io_tx_ubuf_complete(struct sk_buff *skb, struct ubuf_info *uarg,
 			 bool success)
 {
@@ -60,6 +68,10 @@ void io_tx_ubuf_complete(struct sk_buff *skb, struct ubuf_info *uarg,
 	__io_req_task_work_add(notif, tw_flags);
 }
 
+/** 
+ * Menghubungkan sk_buff ke buffer pengguna. 
+ * Digunakan untuk mengelola zero-copy buffer pada transmisi jaringan.
+ */
 static int io_link_skb(struct sk_buff *skb, struct ubuf_info *uarg)
 {
 	struct io_notif_data *nd, *prev_nd;
@@ -104,6 +116,10 @@ static const struct ubuf_info_ops io_ubuf_ops = {
 	.link_skb = io_link_skb,
 };
 
+/** 
+ * Mengalokasikan struktur notifikasi untuk konteks io_uring. 
+ * Digunakan untuk membuat notifikasi baru untuk operasi IO.
+ */
 struct io_kiocb *io_alloc_notif(struct io_ring_ctx *ctx)
 	__must_hold(&ctx->uring_lock)
 {

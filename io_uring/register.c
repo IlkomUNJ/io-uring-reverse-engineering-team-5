@@ -34,7 +34,10 @@
 
 #define IORING_MAX_RESTRICTIONS	(IORING_RESTRICTION_LAST + \
 				 IORING_REGISTER_LAST + IORING_OP_LAST)
-
+/*
+ * Mengecek operasi io_uring yang didukung dan mengisi struktur
+ * hasil di ruang pengguna dengan informasi tersebut.
+ */
 static __cold int io_probe(struct io_ring_ctx *ctx, void __user *arg,
 			   unsigned nr_args)
 {
@@ -73,7 +76,10 @@ out:
 	kfree(p);
 	return ret;
 }
-
+/*
+ * Menghapus personality dari array ctx->personalities dan
+ * melepaskan kredensial yang terkait.
+ */
 int io_unregister_personality(struct io_ring_ctx *ctx, unsigned id)
 {
 	const struct cred *creds;
@@ -87,7 +93,10 @@ int io_unregister_personality(struct io_ring_ctx *ctx, unsigned id)
 	return -EINVAL;
 }
 
-
+/*
+ * Mendaftarkan kredensial task saat ini sebagai personality
+ * dan memberikan ID unik padanya.
+ */
 static int io_register_personality(struct io_ring_ctx *ctx)
 {
 	const struct cred *creds;
@@ -104,7 +113,10 @@ static int io_register_personality(struct io_ring_ctx *ctx)
 	}
 	return id;
 }
-
+/*
+ * Mem-parsing pembatasan (restrictions) dari pengguna dan
+ * menerapkannya ke dalam konteks io_uring.
+ */
 static __cold int io_parse_restrictions(void __user *arg, unsigned int nr_args,
 					struct io_restriction *restrictions)
 {
@@ -154,7 +166,10 @@ err:
 	kfree(res);
 	return ret;
 }
-
+/*
+ * Mendaftarkan pembatasan (restrictions) untuk konteks io_uring,
+ * memastikan pembatasan diterapkan sebelum ring diaktifkan.
+ */
 static __cold int io_register_restrictions(struct io_ring_ctx *ctx,
 					   void __user *arg, unsigned int nr_args)
 {
@@ -176,7 +191,10 @@ static __cold int io_register_restrictions(struct io_ring_ctx *ctx,
 		ctx->restrictions.registered = true;
 	return ret;
 }
-
+/*
+ * Mengaktifkan ring io_uring, memungkinkan operasi untuk
+ * dikirim dan diproses.
+ */
 static int io_register_enable_rings(struct io_ring_ctx *ctx)
 {
 	if (!(ctx->flags & IORING_SETUP_R_DISABLED))
@@ -200,7 +218,9 @@ static int io_register_enable_rings(struct io_ring_ctx *ctx)
 		wake_up(&ctx->sq_data->wait);
 	return 0;
 }
-
+/*
+ * Mengatur afinitas CPU untuk workqueue io_uring.
+ */
 static __cold int __io_register_iowq_aff(struct io_ring_ctx *ctx,
 					 cpumask_var_t new_mask)
 {
@@ -248,12 +268,17 @@ static __cold int io_register_iowq_aff(struct io_ring_ctx *ctx,
 	free_cpumask_var(new_mask);
 	return ret;
 }
-
+/*
+ * Mengatur ulang afinitas CPU workqueue io_uring ke keadaan default.
+ */
 static __cold int io_unregister_iowq_aff(struct io_ring_ctx *ctx)
 {
 	return __io_register_iowq_aff(ctx, NULL);
 }
 
+/*
+ * Mengatur jumlah maksimum worker untuk workqueue io_uring.
+ */
 static __cold int io_register_iowq_max_workers(struct io_ring_ctx *ctx,
 					       void __user *arg)
 	__must_hold(&ctx->uring_lock)
@@ -339,7 +364,10 @@ err:
 	}
 	return ret;
 }
-
+/*
+ * Mendaftarkan clock ID untuk instance io_uring, memungkinkan
+ * operasi menggunakan clock tertentu.
+ */
 static int io_register_clock(struct io_ring_ctx *ctx,
 			     struct io_uring_clock_register __user *arg)
 {
@@ -394,7 +422,10 @@ static void io_register_free_rings(struct io_ring_ctx *ctx,
 #define RESIZE_FLAGS	(IORING_SETUP_CQSIZE | IORING_SETUP_CLAMP)
 #define COPY_FLAGS	(IORING_SETUP_NO_SQARRAY | IORING_SETUP_SQE128 | \
 			 IORING_SETUP_CQE32 | IORING_SETUP_NO_MMAP)
-
+/*
+ * Mengubah ukuran submission queue dan completion queue
+ * untuk instance io_uring.
+ */
 static int io_register_resize_rings(struct io_ring_ctx *ctx, void __user *arg)
 {
 	struct io_uring_region_desc rd;
@@ -580,7 +611,9 @@ out:
 
 	return ret;
 }
-
+/*
+ * Mendaftarkan region memori untuk digunakan dalam operasi io_uring.
+ */
 static int io_register_mem_region(struct io_ring_ctx *ctx, void __user *uarg)
 {
 	struct io_uring_mem_region_reg __user *reg_uptr = uarg;
@@ -625,7 +658,10 @@ static int io_register_mem_region(struct io_ring_ctx *ctx, void __user *uarg)
 	}
 	return 0;
 }
-
+/*
+ * Menangani logika utama untuk syscall io_uring_register,
+ * memproses berbagai opcode registrasi.
+ */
 static int __io_uring_register(struct io_ring_ctx *ctx, unsigned opcode,
 			       void __user *arg, unsigned nr_args)
 	__releases(ctx->uring_lock)
@@ -900,6 +936,10 @@ static int io_uring_register_blind(unsigned int opcode, void __user *arg,
 	return -EINVAL;
 }
 
+/*
+ * Implementasi syscall io_uring_register, menangani berbagai
+ * operasi registrasi dan pembatalan registrasi.
+ */
 SYSCALL_DEFINE4(io_uring_register, unsigned int, fd, unsigned int, opcode,
 		void __user *, arg, unsigned int, nr_args)
 {

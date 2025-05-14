@@ -31,18 +31,51 @@ static inline void io_poll_multishot_retry(struct io_kiocb *req)
 {
 	atomic_inc(&req->poll_refs);
 }
-
+/*
+ * Menyiapkan permintaan penambahan poll dengan mem-parsing event mask
+ * dan memvalidasi field dari io_uring_sqe.
+ */
 int io_poll_add_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe);
+
+/*
+ * Menambahkan permintaan poll ke wait queue dan mengaktifkan handler-nya.
+ */
 int io_poll_add(struct io_kiocb *req, unsigned int issue_flags);
 
+/*
+ * Menyiapkan permintaan penghapusan poll dengan parsing event mask
+ * dan validasi io_uring_sqe.
+ */
 int io_poll_remove_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe);
+
+/*
+ * Menghapus permintaan poll dari wait queue dan opsional memperbarui
+ * event atau user data-nya.
+ */
 int io_poll_remove(struct io_kiocb *req, unsigned int issue_flags);
 
 struct io_cancel_data;
+/*
+ * Membatalkan permintaan poll berdasarkan data pembatalan yang diberikan.
+ */
 int io_poll_cancel(struct io_ring_ctx *ctx, struct io_cancel_data *cd,
 		   unsigned issue_flags);
+
+/*
+ * Mengaktifkan handler poll untuk permintaan yang diberikan,
+ * memungkinkan permintaan tersebut memantau event.
+ */
 int io_arm_poll_handler(struct io_kiocb *req, unsigned issue_flags);
+
+/*
+ * Menghapus semua permintaan poll yang terkait dengan konteks task tertentu (tctx).
+ * Jika cancel_all bernilai true, semua permintaan dibatalkan.
+ */
 bool io_poll_remove_all(struct io_ring_ctx *ctx, struct io_uring_task *tctx,
 			bool cancel_all);
 
+/*
+ * Menangani task work untuk permintaan poll,
+ * termasuk memeriksa event, menjalankan ulang, atau menyelesaikannya.
+ */
 void io_poll_task_func(struct io_kiocb *req, io_tw_token_t tw);
