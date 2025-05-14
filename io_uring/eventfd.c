@@ -24,7 +24,9 @@ struct io_ev_fd {
 enum {
 	IO_EVENTFD_OP_SIGNAL_BIT,
 };
-
+/**
+ * Mengurangi referensi dan membebaskan io_ev_fd jika tidak digunakan.
+ */
 static void io_eventfd_free(struct rcu_head *rcu)
 {
 	struct io_ev_fd *ev_fd = container_of(rcu, struct io_ev_fd, rcu);
@@ -32,13 +34,17 @@ static void io_eventfd_free(struct rcu_head *rcu)
 	eventfd_ctx_put(ev_fd->cq_ev_fd);
 	kfree(ev_fd);
 }
-
+/**
+ * Mengurangi referensi pada io_ev_fd dan membebaskan jika perlu.
+ */
 static void io_eventfd_put(struct io_ev_fd *ev_fd)
 {
 	if (refcount_dec_and_test(&ev_fd->refs))
 		call_rcu(&ev_fd->rcu, io_eventfd_free);
 }
-
+/**
+ * Melakukan sinyal eventfd secara asynchronous melalui RCU.
+ */
 static void io_eventfd_do_signal(struct rcu_head *rcu)
 {
 	struct io_ev_fd *ev_fd = container_of(rcu, struct io_ev_fd, rcu);
@@ -46,7 +52,9 @@ static void io_eventfd_do_signal(struct rcu_head *rcu)
 	eventfd_signal_mask(ev_fd->cq_ev_fd, EPOLL_URING_WAKE);
 	io_eventfd_put(ev_fd);
 }
-
+/**
+ * Melepaskan referensi dan unlock RCU pada io_ev_fd.
+ */
 static void io_eventfd_release(struct io_ev_fd *ev_fd, bool put_ref)
 {
 	if (put_ref)
@@ -111,7 +119,9 @@ static struct io_ev_fd *io_eventfd_grab(struct io_ring_ctx *ctx)
 	rcu_read_unlock();
 	return NULL;
 }
-
+/**
+ * Memberi sinyal ke eventfd pada context io_uring.
+ */
 void io_eventfd_signal(struct io_ring_ctx *ctx)
 {
 	struct io_ev_fd *ev_fd;
@@ -120,7 +130,9 @@ void io_eventfd_signal(struct io_ring_ctx *ctx)
 	if (ev_fd)
 		io_eventfd_release(ev_fd, __io_eventfd_signal(ev_fd));
 }
-
+/**
+ * Memberi sinyal ke eventfd hanya jika ada event baru di CQ ring.
+ */
 void io_eventfd_flush_signal(struct io_ring_ctx *ctx)
 {
 	struct io_ev_fd *ev_fd;
@@ -149,7 +161,9 @@ void io_eventfd_flush_signal(struct io_ring_ctx *ctx)
 		io_eventfd_release(ev_fd, put_ref);
 	}
 }
-
+/**
+ * Mendaftarkan eventfd ke context io_uring.
+ */
 int io_eventfd_register(struct io_ring_ctx *ctx, void __user *arg,
 			unsigned int eventfd_async)
 {
@@ -188,7 +202,9 @@ int io_eventfd_register(struct io_ring_ctx *ctx, void __user *arg,
 	rcu_assign_pointer(ctx->io_ev_fd, ev_fd);
 	return 0;
 }
-
+/**
+ * Melepas eventfd dari context io_uring.
+ */
 int io_eventfd_unregister(struct io_ring_ctx *ctx)
 {
 	struct io_ev_fd *ev_fd;

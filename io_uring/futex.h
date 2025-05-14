@@ -37,21 +37,33 @@ bool io_futex_cache_init(struct io_ring_ctx *ctx);
  */
 void io_futex_cache_free(struct io_ring_ctx *ctx);
 #else
+/**
+ * Dummy: Membatalkan permintaan futex (tidak melakukan apa-apa jika futex tidak didukung).
+ */
 static inline int io_futex_cancel(struct io_ring_ctx *ctx,
 				  struct io_cancel_data *cd,
 				  unsigned int issue_flags)
 {
 	return 0;
 }
+/**
+ * Dummy: Menghapus semua permintaan futex (tidak melakukan apa-apa jika futex tidak didukung).
+ */
 static inline bool io_futex_remove_all(struct io_ring_ctx *ctx,
 				       struct io_uring_task *tctx, bool cancel_all)
 {
 	return false;
 }
+/**
+ * Dummy: Inisialisasi cache futex (tidak melakukan apa-apa jika futex tidak didukung).
+ */
 static inline bool io_futex_cache_init(struct io_ring_ctx *ctx)
 {
 	return false;
 }
+/**
+ * Dummy: Membebaskan cache futex (tidak melakukan apa-apa jika futex tidak didukung).
+ */
 static inline void io_futex_cache_free(struct io_ring_ctx *ctx)
 {
 }

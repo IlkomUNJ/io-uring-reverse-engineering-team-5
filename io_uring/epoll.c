@@ -25,7 +25,9 @@ struct io_epoll_wait {
 	int				maxevents;
 	struct epoll_event __user	*events;
 };
-
+/**
+ * Persiapkan permintaan operasi epoll_ctl.
+ */
 int io_epoll_ctl_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 {
 	struct io_epoll *epoll = io_kiocb_to_cmd(req, struct io_epoll);
@@ -67,7 +69,9 @@ int io_epoll_ctl(struct io_kiocb *req, unsigned int issue_flags)
 	io_req_set_res(req, ret, 0);
 	return IOU_OK;
 }
-
+/**
+ * Persiapkan permintaan operasi epoll_wait.
+ */
 int io_epoll_wait_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 {
 	struct io_epoll_wait *iew = io_kiocb_to_cmd(req, struct io_epoll_wait);
@@ -79,7 +83,9 @@ int io_epoll_wait_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 	iew->events = u64_to_user_ptr(READ_ONCE(sqe->addr));
 	return 0;
 }
-
+/**
+ * Jalankan operasi epoll_wait dan kirim event ke userspace.
+ */
 int io_epoll_wait(struct io_kiocb *req, unsigned int issue_flags)
 {
 	struct io_epoll_wait *iew = io_kiocb_to_cmd(req, struct io_epoll_wait);

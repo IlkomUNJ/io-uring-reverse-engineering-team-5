@@ -13,6 +13,9 @@
 #include "rsrc.h"
 #include "filetable.h"
 
+/**
+ * Cari slot file kosong pada bitmap file table.
+ */
 static int io_file_bitmap_get(struct io_ring_ctx *ctx)
 {
 	struct io_file_table *table = &ctx->file_table;
@@ -35,7 +38,9 @@ static int io_file_bitmap_get(struct io_ring_ctx *ctx)
 
 	return -ENFILE;
 }
-
+/**
+ * Alokasikan tabel file dan bitmap untuk context io_uring.
+ */
 bool io_alloc_file_tables(struct io_ring_ctx *ctx, struct io_file_table *table,
 			  unsigned nr_files)
 {
@@ -47,14 +52,18 @@ bool io_alloc_file_tables(struct io_ring_ctx *ctx, struct io_file_table *table,
 	io_rsrc_data_free(ctx, &table->data);
 	return false;
 }
-
+/**
+ * Bebaskan tabel file dan bitmap pada context io_uring.
+ */
 void io_free_file_tables(struct io_ring_ctx *ctx, struct io_file_table *table)
 {
 	io_rsrc_data_free(ctx, &table->data);
 	bitmap_free(table->bitmap);
 	table->bitmap = NULL;
 }
-
+/**
+ * Instal file ke slot file tetap pada context.
+ */
 static int io_install_fixed_file(struct io_ring_ctx *ctx, struct file *file,
 				 u32 slot_index)
 	__must_hold(&req->ctx->uring_lock)
@@ -79,7 +88,9 @@ static int io_install_fixed_file(struct io_ring_ctx *ctx, struct file *file,
 	io_fixed_file_set(node, file);
 	return 0;
 }
-
+/**
+ * Instal file ke slot file tetap pada context.
+ */
 int __io_fixed_fd_install(struct io_ring_ctx *ctx, struct file *file,
 			  unsigned int file_slot)
 {
@@ -118,7 +129,9 @@ int io_fixed_fd_install(struct io_kiocb *req, unsigned int issue_flags,
 		fput(file);
 	return ret;
 }
-
+/**
+ * Hapus file dari slot file tetap pada context.
+ */
 int io_fixed_fd_remove(struct io_ring_ctx *ctx, unsigned int offset)
 {
 	struct io_rsrc_node *node;
@@ -135,7 +148,9 @@ int io_fixed_fd_remove(struct io_ring_ctx *ctx, unsigned int offset)
 	io_file_bitmap_clear(&ctx->file_table, offset);
 	return 0;
 }
-
+/**
+ * Daftarkan rentang slot file yang dapat dialokasikan.
+ */
 int io_register_file_alloc_range(struct io_ring_ctx *ctx,
 				 struct io_uring_file_index_range __user *arg)
 {
