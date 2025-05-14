@@ -39,16 +39,24 @@
 #include "truncate.h"
 #include "zcrx.h"
 
+/** 
+ * Fungsi dummy untuk operasi yang tidak memiliki implementasi issue. 
+ * Digunakan untuk menandai operasi sebagai dibatalkan.
+ */
 static int io_no_issue(struct io_kiocb *req, unsigned int issue_flags)
 {
-	WARN_ON_ONCE(1);
-	return -ECANCELED;
+    WARN_ON_ONCE(1);
+    return -ECANCELED;
 }
 
+/** 
+ * Fungsi dummy untuk operasi yang tidak didukung. 
+ * Digunakan untuk menandai operasi sebagai tidak didukung.
+ */
 static __maybe_unused int io_eopnotsupp_prep(struct io_kiocb *kiocb,
-					     const struct io_uring_sqe *sqe)
+                         const struct io_uring_sqe *sqe)
 {
-	return -EOPNOTSUPP;
+    return -EOPNOTSUPP;
 }
 
 const struct io_issue_def io_issue_defs[] = {
@@ -817,32 +825,44 @@ const struct io_cold_def io_cold_defs[] = {
 	},
 };
 
+/** 
+ * Mendapatkan nama opcode berdasarkan nilai opcode. 
+ * Digunakan untuk mengembalikan nama opcode yang sesuai.
+ */
 const char *io_uring_get_opcode(u8 opcode)
 {
-	if (opcode < IORING_OP_LAST)
-		return io_cold_defs[opcode].name;
-	return "INVALID";
+    if (opcode < IORING_OP_LAST)
+        return io_cold_defs[opcode].name;
+    return "INVALID";
 }
 
+/** 
+ * Memeriksa apakah opcode didukung oleh io_uring. 
+ * Digunakan untuk menentukan apakah operasi dapat dijalankan.
+ */
 bool io_uring_op_supported(u8 opcode)
 {
-	if (opcode < IORING_OP_LAST &&
-	    io_issue_defs[opcode].prep != io_eopnotsupp_prep)
-		return true;
-	return false;
+    if (opcode < IORING_OP_LAST &&
+        io_issue_defs[opcode].prep != io_eopnotsupp_prep)
+        return true;
+    return false;
 }
 
+/** 
+ * Menginisialisasi tabel operasi io_uring. 
+ * Digunakan untuk memastikan semua operasi memiliki definisi yang valid.
+ */
 void __init io_uring_optable_init(void)
 {
-	int i;
+    int i;
 
-	BUILD_BUG_ON(ARRAY_SIZE(io_cold_defs) != IORING_OP_LAST);
-	BUILD_BUG_ON(ARRAY_SIZE(io_issue_defs) != IORING_OP_LAST);
+    BUILD_BUG_ON(ARRAY_SIZE(io_cold_defs) != IORING_OP_LAST);
+    BUILD_BUG_ON(ARRAY_SIZE(io_issue_defs) != IORING_OP_LAST);
 
-	for (i = 0; i < ARRAY_SIZE(io_issue_defs); i++) {
-		BUG_ON(!io_issue_defs[i].prep);
-		if (io_issue_defs[i].prep != io_eopnotsupp_prep)
-			BUG_ON(!io_issue_defs[i].issue);
-		WARN_ON_ONCE(!io_cold_defs[i].name);
-	}
+    for (i = 0; i < ARRAY_SIZE(io_issue_defs); i++) {
+        BUG_ON(!io_issue_defs[i].prep);
+        if (io_issue_defs[i].prep != io_eopnotsupp_prep)
+            BUG_ON(!io_issue_defs[i].issue);
+        WARN_ON_ONCE(!io_cold_defs[i].name);
+    }
 }

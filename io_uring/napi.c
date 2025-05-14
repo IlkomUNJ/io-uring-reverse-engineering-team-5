@@ -8,18 +8,12 @@
 /* Timeout for cleanout of stale entries. */
 #define NAPI_TIMEOUT		(60 * SEC_CONVERSION)
 
-struct io_napi_entry {
-	unsigned int		napi_id;
-	struct list_head	list;
-
-	unsigned long		timeout;
-	struct hlist_node	node;
-
-	struct rcu_head		rcu;
-};
-
+/** 
+ * Mencari entri NAPI berdasarkan ID di hash list. 
+ * Digunakan untuk menemukan entri NAPI yang sesuai.
+ */
 static struct io_napi_entry *io_napi_hash_find(struct hlist_head *hash_list,
-					       unsigned int napi_id)
+                                               unsigned int napi_id)
 {
 	struct io_napi_entry *e;
 
@@ -32,12 +26,20 @@ static struct io_napi_entry *io_napi_hash_find(struct hlist_head *hash_list,
 	return NULL;
 }
 
+/** 
+ * Mengonversi waktu jaringan ke format ktime. 
+ * Digunakan untuk menghitung waktu dalam format kernel.
+ */
 static inline ktime_t net_to_ktime(unsigned long t)
 {
 	/* napi approximating usecs, reverse busy_loop_current_time */
 	return ns_to_ktime(t << 10);
 }
 
+/** 
+ * Menambahkan ID NAPI ke konteks io_uring. 
+ * Digunakan untuk mendaftarkan ID NAPI baru.
+ */
 int __io_napi_add_id(struct io_ring_ctx *ctx, unsigned int napi_id)
 {
 	struct hlist_head *hash_list;
@@ -81,6 +83,10 @@ int __io_napi_add_id(struct io_ring_ctx *ctx, unsigned int napi_id)
 	return 0;
 }
 
+/** 
+ * Menghapus ID NAPI dari konteks io_uring. 
+ * Digunakan untuk menghapus ID NAPI yang tidak lagi diperlukan.
+ */
 static int __io_napi_del_id(struct io_ring_ctx *ctx, unsigned int napi_id)
 {
 	struct hlist_head *hash_list;
@@ -102,6 +108,10 @@ static int __io_napi_del_id(struct io_ring_ctx *ctx, unsigned int napi_id)
 	return 0;
 }
 
+/** 
+ * Menghapus entri NAPI yang sudah kedaluwarsa dari konteks io_uring. 
+ * Digunakan untuk membersihkan entri NAPI yang tidak valid.
+ */
 static void __io_napi_remove_stale(struct io_ring_ctx *ctx)
 {
 	struct io_napi_entry *e;
@@ -122,12 +132,20 @@ static void __io_napi_remove_stale(struct io_ring_ctx *ctx)
 	}
 }
 
+/** 
+ * Menghapus entri NAPI yang sudah kedaluwarsa jika diperlukan. 
+ * Digunakan untuk memastikan daftar NAPI tetap bersih.
+ */
 static inline void io_napi_remove_stale(struct io_ring_ctx *ctx, bool is_stale)
 {
 	if (is_stale)
 		__io_napi_remove_stale(ctx);
 }
 
+/** 
+ * Memeriksa apakah waktu busy loop NAPI telah habis. 
+ * Digunakan untuk menentukan apakah loop harus dihentikan.
+ */
 static inline bool io_napi_busy_loop_timeout(ktime_t start_time,
 					     ktime_t bp)
 {
@@ -141,6 +159,10 @@ static inline bool io_napi_busy_loop_timeout(ktime_t start_time,
 	return true;
 }
 
+/** 
+ * Memeriksa apakah loop busy polling NAPI harus dihentikan. 
+ * Digunakan untuk menentukan kondisi penghentian loop.
+ */
 static bool io_napi_busy_loop_should_end(void *data,
 					 unsigned long start_time)
 {
@@ -157,8 +179,9 @@ static bool io_napi_busy_loop_should_end(void *data,
 	return false;
 }
 
-/*
- * never report stale entries
+/** 
+ * Melakukan loop busy polling untuk entri NAPI dengan pelacakan statis. 
+ * Digunakan untuk memproses entri NAPI tanpa pelacakan dinamis.
  */
 static bool static_tracking_do_busy_loop(struct io_ring_ctx *ctx,
 					 bool (*loop_end)(void *, unsigned long),
@@ -172,6 +195,10 @@ static bool static_tracking_do_busy_loop(struct io_ring_ctx *ctx,
 	return false;
 }
 
+/** 
+ * Melakukan loop busy polling untuk entri NAPI dengan pelacakan dinamis. 
+ * Digunakan untuk memproses entri NAPI dengan pelacakan waktu kedaluwarsa.
+ */
 static bool
 dynamic_tracking_do_busy_loop(struct io_ring_ctx *ctx,
 			      bool (*loop_end)(void *, unsigned long),
@@ -191,6 +218,10 @@ dynamic_tracking_do_busy_loop(struct io_ring_ctx *ctx,
 	return is_stale;
 }
 
+/** 
+ * Melakukan loop busy polling untuk entri NAPI. 
+ * Digunakan untuk memproses entri NAPI berdasarkan mode pelacakan.
+ */
 static inline bool
 __io_napi_do_busy_loop(struct io_ring_ctx *ctx,
 		       bool (*loop_end)(void *, unsigned long),
@@ -201,6 +232,10 @@ __io_napi_do_busy_loop(struct io_ring_ctx *ctx,
 	return dynamic_tracking_do_busy_loop(ctx, loop_end, loop_end_arg);
 }
 
+/** 
+ * Melakukan loop busy polling dengan blokir untuk entri NAPI. 
+ * Digunakan untuk memproses entri NAPI hingga kondisi tertentu terpenuhi.
+ */
 static void io_napi_blocking_busy_loop(struct io_ring_ctx *ctx,
 				       struct io_wait_queue *iowq)
 {
@@ -228,11 +263,9 @@ static void io_napi_blocking_busy_loop(struct io_ring_ctx *ctx,
 	io_napi_remove_stale(ctx, is_stale);
 }
 
-/*
- * io_napi_init() - Init napi settings
- * @ctx: pointer to io-uring context structure
- *
- * Init napi settings in the io-uring context.
+/** 
+ * Menginisialisasi pengaturan NAPI di konteks io_uring. 
+ * Digunakan untuk menyiapkan daftar dan pengaturan NAPI.
  */
 void io_napi_init(struct io_ring_ctx *ctx)
 {
@@ -245,11 +278,9 @@ void io_napi_init(struct io_ring_ctx *ctx)
 	ctx->napi_track_mode = IO_URING_NAPI_TRACKING_INACTIVE;
 }
 
-/*
- * io_napi_free() - Deallocate napi
- * @ctx: pointer to io-uring context structure
- *
- * Free the napi list and the hash table in the io-uring context.
+/** 
+ * Membebaskan daftar dan hash table NAPI di konteks io_uring. 
+ * Digunakan untuk membersihkan sumber daya NAPI.
  */
 void io_napi_free(struct io_ring_ctx *ctx)
 {
@@ -263,6 +294,10 @@ void io_napi_free(struct io_ring_ctx *ctx)
 	INIT_LIST_HEAD_RCU(&ctx->napi_list);
 }
 
+/** 
+ * Mendaftarkan pengaturan NAPI baru di konteks io_uring. 
+ * Digunakan untuk mengatur mode pelacakan dan preferensi busy polling.
+ */
 static int io_napi_register_napi(struct io_ring_ctx *ctx,
 				 struct io_uring_napi *napi)
 {
@@ -281,12 +316,9 @@ static int io_napi_register_napi(struct io_ring_ctx *ctx,
 	return 0;
 }
 
-/*
- * io_napi_register() - Register napi with io-uring
- * @ctx: pointer to io-uring context structure
- * @arg: pointer to io_uring_napi structure
- *
- * Register napi in the io-uring context.
+/** 
+ * Mendaftarkan NAPI di konteks io_uring. 
+ * Digunakan untuk menambahkan atau mengubah pengaturan NAPI.
  */
 int io_register_napi(struct io_ring_ctx *ctx, void __user *arg)
 {
@@ -323,13 +355,9 @@ int io_register_napi(struct io_ring_ctx *ctx, void __user *arg)
 	}
 }
 
-/*
- * io_napi_unregister() - Unregister napi with io-uring
- * @ctx: pointer to io-uring context structure
- * @arg: pointer to io_uring_napi structure
- *
- * Unregister napi. If arg has been specified copy the busy poll timeout and
- * prefer busy poll setting to the passed in structure.
+/** 
+ * Membatalkan pendaftaran NAPI di konteks io_uring. 
+ * Digunakan untuk menghapus pengaturan NAPI yang ada.
  */
 int io_unregister_napi(struct io_ring_ctx *ctx, void __user *arg)
 {
@@ -347,12 +375,9 @@ int io_unregister_napi(struct io_ring_ctx *ctx, void __user *arg)
 	return 0;
 }
 
-/*
- * __io_napi_busy_loop() - execute busy poll loop
- * @ctx: pointer to io-uring context structure
- * @iowq: pointer to io wait queue
- *
- * Execute the busy poll loop and merge the spliced off list.
+/** 
+ * Melakukan loop busy polling untuk antrean tunggu IO. 
+ * Digunakan untuk memproses pekerjaan dengan busy polling.
  */
 void __io_napi_busy_loop(struct io_ring_ctx *ctx, struct io_wait_queue *iowq)
 {
@@ -370,11 +395,9 @@ void __io_napi_busy_loop(struct io_ring_ctx *ctx, struct io_wait_queue *iowq)
 	io_napi_blocking_busy_loop(ctx, iowq);
 }
 
-/*
- * io_napi_sqpoll_busy_poll() - busy poll loop for sqpoll
- * @ctx: pointer to io-uring context structure
- *
- * Splice of the napi list and execute the napi busy poll loop.
+/** 
+ * Melakukan loop busy polling untuk SQPOLL. 
+ * Digunakan untuk memproses pekerjaan SQPOLL dengan busy polling.
  */
 int io_napi_sqpoll_busy_poll(struct io_ring_ctx *ctx)
 {

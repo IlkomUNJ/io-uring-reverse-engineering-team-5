@@ -102,6 +102,10 @@ static int io_sg_from_iter_iovec(struct sk_buff *skb,
 static int io_sg_from_iter(struct sk_buff *skb,
 			   struct iov_iter *from, size_t length);
 
+/** 
+ * Mempersiapkan permintaan shutdown pada socket. 
+ * Digunakan untuk memvalidasi parameter shutdown.
+ */
 int io_shutdown_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 {
 	struct io_shutdown *shutdown = io_kiocb_to_cmd(req, struct io_shutdown);
@@ -115,6 +119,10 @@ int io_shutdown_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 	return 0;
 }
 
+/** 
+ * Menangani permintaan shutdown pada socket. 
+ * Digunakan untuk menutup koneksi socket secara parsial atau penuh.
+ */
 int io_shutdown(struct io_kiocb *req, unsigned int issue_flags)
 {
 	struct io_shutdown *shutdown = io_kiocb_to_cmd(req, struct io_shutdown);
@@ -132,6 +140,10 @@ int io_shutdown(struct io_kiocb *req, unsigned int issue_flags)
 	return IOU_OK;
 }
 
+/** 
+ * Memeriksa apakah operasi jaringan perlu diulang. 
+ * Digunakan untuk menangani kondisi tertentu pada socket.
+ */
 static bool io_net_retry(struct socket *sock, int flags)
 {
 	if (!(flags & MSG_WAITALL))
@@ -139,12 +151,20 @@ static bool io_net_retry(struct socket *sock, int flags)
 	return sock->type == SOCK_STREAM || sock->type == SOCK_SEQPACKET;
 }
 
+/** 
+ * Membebaskan struktur iovec dari pesan jaringan. 
+ * Digunakan untuk membersihkan sumber daya yang digunakan oleh iovec.
+ */
 static void io_netmsg_iovec_free(struct io_async_msghdr *kmsg)
 {
 	if (kmsg->vec.iovec)
 		io_vec_free(&kmsg->vec);
 }
 
+/** 
+ * Mendaur ulang pesan jaringan untuk digunakan kembali. 
+ * Digunakan untuk mengoptimalkan penggunaan memori pada operasi jaringan.
+ */
 static void io_netmsg_recycle(struct io_kiocb *req, unsigned int issue_flags)
 {
 	struct io_async_msghdr *hdr = req->async_data;
@@ -166,6 +186,10 @@ static void io_netmsg_recycle(struct io_kiocb *req, unsigned int issue_flags)
 	}
 }
 
+/** 
+ * Mengalokasikan struktur async untuk pesan jaringan. 
+ * Digunakan untuk menangani operasi jaringan secara asinkron.
+ */
 static struct io_async_msghdr *io_msg_alloc_async(struct io_kiocb *req)
 {
 	struct io_ring_ctx *ctx = req->ctx;
@@ -181,6 +205,10 @@ static struct io_async_msghdr *io_msg_alloc_async(struct io_kiocb *req)
 	return hdr;
 }
 
+/** 
+ * Mempersiapkan ulang permintaan multishot untuk pesan jaringan. 
+ * Digunakan untuk mengatur ulang parameter sebelum mencoba ulang.
+ */
 static inline void io_mshot_prep_retry(struct io_kiocb *req,
 				       struct io_async_msghdr *kmsg)
 {
@@ -193,6 +221,10 @@ static inline void io_mshot_prep_retry(struct io_kiocb *req,
 	req->buf_index = sr->buf_group;
 }
 
+/** 
+ * Mengimpor vektor iovec dari pengguna ke kernel. 
+ * Digunakan untuk memproses data yang akan dikirim atau diterima.
+ */
 static int io_net_import_vec(struct io_kiocb *req, struct io_async_msghdr *iomsg,
 			     const struct iovec __user *uiov, unsigned uvec_seg,
 			     int ddir)
@@ -253,6 +285,10 @@ static int io_compat_msg_copy_hdr(struct io_kiocb *req,
 	return 0;
 }
 
+/** 
+ * Menyalin header pesan dari pengguna ke kernel. 
+ * Digunakan untuk memproses header pesan jaringan.
+ */
 static int io_copy_msghdr_from_user(struct user_msghdr *msg,
 				    struct user_msghdr __user *umsg)
 {
@@ -271,6 +307,10 @@ ua_end:
 	return -EFAULT;
 }
 
+/** 
+ * Menyalin header pesan untuk operasi jaringan. 
+ * Digunakan untuk memproses header pesan sebelum operasi.
+ */
 static int io_msg_copy_hdr(struct io_kiocb *req, struct io_async_msghdr *iomsg,
 			   struct user_msghdr *msg, int ddir,
 			   struct sockaddr __user **save_addr)
@@ -324,6 +364,10 @@ static int io_msg_copy_hdr(struct io_kiocb *req, struct io_async_msghdr *iomsg,
 	return 0;
 }
 
+/** 
+ * Membersihkan sumber daya yang digunakan oleh operasi sendmsg atau recvmsg. 
+ * Digunakan untuk membebaskan memori yang dialokasikan.
+ */
 void io_sendmsg_recvmsg_cleanup(struct io_kiocb *req)
 {
 	struct io_async_msghdr *io = req->async_data;
@@ -396,6 +440,10 @@ static int io_sendmsg_setup(struct io_kiocb *req, const struct io_uring_sqe *sqe
 
 #define SENDMSG_FLAGS (IORING_RECVSEND_POLL_FIRST | IORING_RECVSEND_BUNDLE)
 
+/** 
+ * Mempersiapkan permintaan sendmsg. 
+ * Digunakan untuk memvalidasi parameter dan mengatur operasi sendmsg.
+ */
 int io_sendmsg_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 {
 	struct io_sr_msg *sr = io_kiocb_to_cmd(req, struct io_sr_msg);
@@ -511,6 +559,10 @@ finish:
 	return true;
 }
 
+/** 
+ * Menangani operasi sendmsg pada socket. 
+ * Digunakan untuk mengirim data melalui socket.
+ */
 int io_sendmsg(struct io_kiocb *req, unsigned int issue_flags)
 {
 	struct io_sr_msg *sr = io_kiocb_to_cmd(req, struct io_sr_msg);
@@ -609,6 +661,10 @@ static int io_send_select_buffer(struct io_kiocb *req, unsigned int issue_flags,
 	return 0;
 }
 
+/** 
+ * Menangani operasi send pada socket. 
+ * Digunakan untuk mengirim data melalui socket tanpa header pesan.
+ */
 int io_send(struct io_kiocb *req, unsigned int issue_flags)
 {
 	struct io_sr_msg *sr = io_kiocb_to_cmd(req, struct io_sr_msg);
@@ -754,6 +810,10 @@ static int io_recvmsg_prep_setup(struct io_kiocb *req)
 #define RECVMSG_FLAGS (IORING_RECVSEND_POLL_FIRST | IORING_RECV_MULTISHOT | \
 			IORING_RECVSEND_BUNDLE)
 
+/** 
+ * Mempersiapkan permintaan recvmsg. 
+ * Digunakan untuk memvalidasi parameter dan mengatur operasi recvmsg.
+ */
 int io_recvmsg_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 {
 	struct io_sr_msg *sr = io_kiocb_to_cmd(req, struct io_sr_msg);
@@ -875,7 +935,7 @@ finish:
 }
 
 static int io_recvmsg_prep_multishot(struct io_async_msghdr *kmsg,
-				     struct io_sr_msg *sr, void __user **buf,
+				     struct io_sr_msg *io, void __user **buf,
 				     size_t *len)
 {
 	unsigned long ubuf = (unsigned long) *buf;
@@ -893,7 +953,7 @@ static int io_recvmsg_prep_multishot(struct io_async_msghdr *kmsg,
 		kmsg->msg.msg_controllen = kmsg->controllen;
 	}
 
-	sr->buf = *buf; /* stash for later copy */
+	io->buf = *buf; /* stash for later copy */
 	*buf = (void __user *) (ubuf + hdr);
 	kmsg->payloadlen = *len = *len - hdr;
 	return 0;
@@ -958,6 +1018,10 @@ static int io_recvmsg_multishot(struct socket *sock, struct io_sr_msg *io,
 			kmsg->controllen + err;
 }
 
+/** 
+ * Menangani operasi recvmsg pada socket. 
+ * Digunakan untuk menerima data dari socket.
+ */
 int io_recvmsg(struct io_kiocb *req, unsigned int issue_flags)
 {
 	struct io_sr_msg *sr = io_kiocb_to_cmd(req, struct io_sr_msg);
@@ -1110,6 +1174,10 @@ map_ubuf:
 	return 0;
 }
 
+/** 
+ * Menangani operasi recv pada socket. 
+ * Digunakan untuk menerima data dari socket tanpa header pesan.
+ */
 int io_recv(struct io_kiocb *req, unsigned int issue_flags)
 {
 	struct io_sr_msg *sr = io_kiocb_to_cmd(req, struct io_sr_msg);
@@ -1186,6 +1254,10 @@ out_free:
 	return ret;
 }
 
+/** 
+ * Mempersiapkan permintaan recv dengan zero-copy. 
+ * Digunakan untuk memvalidasi parameter dan mengatur operasi recv zero-copy.
+ */
 int io_recvzc_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 {
 	struct io_recvzc *zc = io_kiocb_to_cmd(req, struct io_recvzc);
@@ -1217,6 +1289,10 @@ int io_recvzc_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 	return 0;
 }
 
+/** 
+ * Menangani operasi recv dengan zero-copy pada socket. 
+ * Digunakan untuk menerima data dari socket dengan zero-copy.
+ */
 int io_recvzc(struct io_kiocb *req, unsigned int issue_flags)
 {
 	struct io_recvzc *zc = io_kiocb_to_cmd(req, struct io_recvzc);
@@ -1253,6 +1329,10 @@ int io_recvzc(struct io_kiocb *req, unsigned int issue_flags)
 	return IOU_RETRY;
 }
 
+/** 
+ * Membersihkan sumber daya yang digunakan oleh operasi send zero-copy. 
+ * Digunakan untuk membebaskan memori yang dialokasikan.
+ */
 void io_send_zc_cleanup(struct io_kiocb *req)
 {
 	struct io_sr_msg *zc = io_kiocb_to_cmd(req, struct io_sr_msg);
@@ -1269,6 +1349,10 @@ void io_send_zc_cleanup(struct io_kiocb *req)
 #define IO_ZC_FLAGS_COMMON (IORING_RECVSEND_POLL_FIRST | IORING_RECVSEND_FIXED_BUF)
 #define IO_ZC_FLAGS_VALID  (IO_ZC_FLAGS_COMMON | IORING_SEND_ZC_REPORT_USAGE)
 
+/** 
+ * Mempersiapkan permintaan send dengan zero-copy. 
+ * Digunakan untuk memvalidasi parameter dan mengatur operasi send zero-copy.
+ */
 int io_send_zc_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 {
 	struct io_sr_msg *zc = io_kiocb_to_cmd(req, struct io_sr_msg);
@@ -1403,6 +1487,10 @@ static int io_send_zc_import(struct io_kiocb *req, unsigned int issue_flags)
 				ITER_SOURCE, issue_flags);
 }
 
+/** 
+ * Menangani operasi send dengan zero-copy pada socket. 
+ * Digunakan untuk mengirim data melalui socket dengan zero-copy.
+ */
 int io_send_zc(struct io_kiocb *req, unsigned int issue_flags)
 {
 	struct io_sr_msg *zc = io_kiocb_to_cmd(req, struct io_sr_msg);
@@ -1473,6 +1561,10 @@ int io_send_zc(struct io_kiocb *req, unsigned int issue_flags)
 	return IOU_OK;
 }
 
+/** 
+ * Menangani operasi sendmsg dengan zero-copy pada socket. 
+ * Digunakan untuk mengirim data melalui socket dengan zero-copy.
+ */
 int io_sendmsg_zc(struct io_kiocb *req, unsigned int issue_flags)
 {
 	struct io_sr_msg *sr = io_kiocb_to_cmd(req, struct io_sr_msg);
@@ -1544,6 +1636,10 @@ int io_sendmsg_zc(struct io_kiocb *req, unsigned int issue_flags)
 	return IOU_OK;
 }
 
+/** 
+ * Menangani kegagalan operasi send atau recv. 
+ * Digunakan untuk menangani error dan membersihkan sumber daya.
+ */
 void io_sendrecv_fail(struct io_kiocb *req)
 {
 	struct io_sr_msg *sr = io_kiocb_to_cmd(req, struct io_sr_msg);
@@ -1559,6 +1655,10 @@ void io_sendrecv_fail(struct io_kiocb *req)
 #define ACCEPT_FLAGS	(IORING_ACCEPT_MULTISHOT | IORING_ACCEPT_DONTWAIT | \
 			 IORING_ACCEPT_POLL_FIRST)
 
+/** 
+ * Mempersiapkan permintaan accept pada socket. 
+ * Digunakan untuk memvalidasi parameter dan mengatur operasi accept.
+ */
 int io_accept_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 {
 	struct io_accept *accept = io_kiocb_to_cmd(req, struct io_accept);
@@ -1593,6 +1693,10 @@ int io_accept_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 	return 0;
 }
 
+/** 
+ * Menangani operasi accept pada socket. 
+ * Digunakan untuk menerima koneksi baru pada socket.
+ */
 int io_accept(struct io_kiocb *req, unsigned int issue_flags)
 {
 	struct io_accept *accept = io_kiocb_to_cmd(req, struct io_accept);
@@ -1654,6 +1758,10 @@ retry:
 	return IOU_COMPLETE;
 }
 
+/** 
+ * Mempersiapkan permintaan socket. 
+ * Digunakan untuk memvalidasi parameter dan mengatur operasi pembuatan socket.
+ */
 int io_socket_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 {
 	struct io_socket *sock = io_kiocb_to_cmd(req, struct io_socket);
@@ -1675,6 +1783,10 @@ int io_socket_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 	return 0;
 }
 
+/** 
+ * Menangani operasi pembuatan socket. 
+ * Digunakan untuk membuat socket baru.
+ */
 int io_socket(struct io_kiocb *req, unsigned int issue_flags)
 {
 	struct io_socket *sock = io_kiocb_to_cmd(req, struct io_socket);
@@ -1708,6 +1820,10 @@ int io_socket(struct io_kiocb *req, unsigned int issue_flags)
 	return IOU_OK;
 }
 
+/** 
+ * Mempersiapkan permintaan connect pada socket. 
+ * Digunakan untuk memvalidasi parameter dan mengatur operasi connect.
+ */
 int io_connect_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 {
 	struct io_connect *conn = io_kiocb_to_cmd(req, struct io_connect);
@@ -1727,6 +1843,10 @@ int io_connect_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 	return move_addr_to_kernel(conn->addr, conn->addr_len, &io->addr);
 }
 
+/** 
+ * Menangani operasi connect pada socket. 
+ * Digunakan untuk menghubungkan socket ke alamat tertentu.
+ */
 int io_connect(struct io_kiocb *req, unsigned int issue_flags)
 {
 	struct io_connect *connect = io_kiocb_to_cmd(req, struct io_connect);
@@ -1775,6 +1895,10 @@ out:
 	return IOU_OK;
 }
 
+/** 
+ * Mempersiapkan permintaan bind pada socket. 
+ * Digunakan untuk memvalidasi parameter dan mengatur operasi bind.
+ */
 int io_bind_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 {
 	struct io_bind *bind = io_kiocb_to_cmd(req, struct io_bind);
@@ -1793,6 +1917,10 @@ int io_bind_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 	return move_addr_to_kernel(uaddr, bind->addr_len, &io->addr);
 }
 
+/** 
+ * Menangani operasi bind pada socket. 
+ * Digunakan untuk mengikat socket ke alamat tertentu.
+ */
 int io_bind(struct io_kiocb *req, unsigned int issue_flags)
 {
 	struct io_bind *bind = io_kiocb_to_cmd(req, struct io_bind);
@@ -1811,6 +1939,10 @@ int io_bind(struct io_kiocb *req, unsigned int issue_flags)
 	return 0;
 }
 
+/** 
+ * Mempersiapkan permintaan listen pada socket. 
+ * Digunakan untuk memvalidasi parameter dan mengatur operasi listen.
+ */
 int io_listen_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 {
 	struct io_listen *listen = io_kiocb_to_cmd(req, struct io_listen);
@@ -1822,6 +1954,10 @@ int io_listen_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 	return 0;
 }
 
+/** 
+ * Menangani operasi listen pada socket. 
+ * Digunakan untuk mendengarkan koneksi masuk pada socket.
+ */
 int io_listen(struct io_kiocb *req, unsigned int issue_flags)
 {
 	struct io_listen *listen = io_kiocb_to_cmd(req, struct io_listen);
@@ -1839,6 +1975,10 @@ int io_listen(struct io_kiocb *req, unsigned int issue_flags)
 	return 0;
 }
 
+/** 
+ * Membebaskan cache pesan jaringan. 
+ * Digunakan untuk membersihkan memori yang dialokasikan untuk pesan jaringan.
+ */
 void io_netmsg_cache_free(const void *entry)
 {
 	struct io_async_msghdr *kmsg = (struct io_async_msghdr *) entry;

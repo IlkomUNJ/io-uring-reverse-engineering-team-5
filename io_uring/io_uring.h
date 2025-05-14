@@ -73,54 +73,196 @@ static inline bool io_should_wake(struct io_wait_queue *iowq)
 #define IORING_MAX_ENTRIES	32768
 #define IORING_MAX_CQ_ENTRIES	(2 * IORING_MAX_ENTRIES)
 
+/** 
+ * Menghitung ukuran ring berdasarkan flag, jumlah entri SQ, dan jumlah entri CQ. 
+ * Digunakan untuk menentukan ukuran memori yang diperlukan.
+ */
 unsigned long rings_size(unsigned int flags, unsigned int sq_entries,
 			 unsigned int cq_entries, size_t *sq_offset);
+
+			 /** 
+ * Mengisi parameter io_uring dengan nilai default atau yang diminta. 
+ * Memastikan parameter valid sebelum digunakan.
+ */
 int io_uring_fill_params(unsigned entries, struct io_uring_params *p);
+/** 
+ * Mengisi cache CQE jika kosong atau terjadi overflow. 
+ * Digunakan untuk memastikan CQE tersedia untuk operasi.
+ */
 bool io_cqe_cache_refill(struct io_ring_ctx *ctx, bool overflow);
+/** 
+ * Menjalankan pekerjaan task_work dengan sinyal jika diperlukan. 
+ * Digunakan untuk menyelesaikan pekerjaan yang tertunda.
+ */
 int io_run_task_work_sig(struct io_ring_ctx *ctx);
+/** 
+ * Menandai permintaan sebagai gagal dan memproses kegagalan. 
+ * Digunakan untuk menangani permintaan yang tidak berhasil.
+ */
 void io_req_defer_failed(struct io_kiocb *req, s32 res);
 bool io_post_aux_cqe(struct io_ring_ctx *ctx, u64 user_data, s32 res, u32 cflags);
+/** 
+ * Menambahkan CQE tambahan ke ring CQ. 
+ * Digunakan untuk memberikan informasi tambahan kepada pengguna.
+ */
 void io_add_aux_cqe(struct io_ring_ctx *ctx, u64 user_data, s32 res, u32 cflags);
+/** 
+ * Memposting CQE untuk permintaan tertentu. 
+ * Digunakan untuk menyelesaikan permintaan dan memberikan hasil kepada pengguna.
+ */
 bool io_req_post_cqe(struct io_kiocb *req, s32 res, u32 cflags);
+/** 
+ * Mengosongkan dan mem-flush ring CQ. 
+ * Digunakan untuk memastikan semua CQE diproses.
+ */
 void __io_commit_cqring_flush(struct io_ring_ctx *ctx);
 
+/** 
+ * Mendapatkan file normal berdasarkan deskriptor file. 
+ * Digunakan untuk operasi file biasa.
+ */
 struct file *io_file_get_normal(struct io_kiocb *req, int fd);
+/** 
+ * Mendapatkan file tetap berdasarkan deskriptor file. 
+ * Digunakan untuk operasi file yang telah didaftarkan sebelumnya.
+ */
 struct file *io_file_get_fixed(struct io_kiocb *req, int fd,
 			       unsigned issue_flags);
 
+
+/** 
+ * Menambahkan pekerjaan ke antrean kerja tugas untuk diproses nanti. 
+ * Digunakan untuk pekerjaan yang memerlukan penanganan asinkron.
+ */
 void __io_req_task_work_add(struct io_kiocb *req, unsigned flags);
+/** 
+ * Menambahkan pekerjaan ke antrean kerja tugas dari thread lain. 
+ * Digunakan untuk pekerjaan yang memerlukan penanganan lintas thread.
+ */
 void io_req_task_work_add_remote(struct io_kiocb *req, unsigned flags);
+/** 
+ * Menambahkan permintaan ke antrean kerja tugas. 
+ * Digunakan untuk memproses permintaan secara asinkron.
+ */
 void io_req_task_queue(struct io_kiocb *req);
+/** 
+ * Menyelesaikan permintaan tugas dan memproses hasilnya. 
+ * Digunakan untuk menyelesaikan pekerjaan yang tertunda.
+ */
 void io_req_task_complete(struct io_kiocb *req, io_tw_token_t tw);
+/** 
+ * Menambahkan permintaan yang gagal ke antrean kerja tugas. 
+ * Digunakan untuk menangani kegagalan permintaan.
+ */
 void io_req_task_queue_fail(struct io_kiocb *req, int ret);
+/** 
+ * Menambahkan permintaan ke antrean kerja tugas untuk pengiriman. 
+ * Digunakan untuk memproses permintaan yang siap dikirim.
+ */
 void io_req_task_submit(struct io_kiocb *req, io_tw_token_t tw);
+/** 
+ * Menangani daftar pekerjaan task_work. 
+ * Digunakan untuk memproses pekerjaan yang dijadwalkan.
+ */
 struct llist_node *io_handle_tw_list(struct llist_node *node, unsigned int *count, unsigned int max_entries);
+/** 
+ * Menjalankan pekerjaan task_work untuk konteks io_uring tertentu. 
+ * Digunakan untuk menyelesaikan pekerjaan yang tertunda.
+ */
 struct llist_node *tctx_task_work_run(struct io_uring_task *tctx, unsigned int max_entries, unsigned int *count);
+/** 
+ * Menambahkan pekerjaan task_work ke antrean kerja. 
+ * Digunakan untuk memproses pekerjaan yang dijadwalkan.
+ */
 void tctx_task_work(struct callback_head *cb);
+/** 
+ * Membatalkan operasi io_uring secara umum. 
+ * Digunakan untuk membatalkan semua pekerjaan yang sedang berlangsung.
+ */
 __cold void io_uring_cancel_generic(bool cancel_all, struct io_sq_data *sqd);
+/** 
+ * Mengalokasikan konteks tugas untuk io_uring. 
+ * Digunakan untuk menyiapkan lingkungan kerja untuk tugas tertentu.
+ */
 int io_uring_alloc_task_context(struct task_struct *task,
 				struct io_ring_ctx *ctx);
 
+/** 
+ * Menambahkan file yang didaftarkan ke tabel file io_uring. 
+ * Digunakan untuk operasi file tetap.
+ */			
 int io_ring_add_registered_file(struct io_uring_task *tctx, struct file *file,
 				     int start, int end);
+/** 
+ * Menambahkan permintaan ke antrean kerja io_wq untuk diproses. 
+ * Digunakan untuk pekerjaan yang memerlukan penanganan asinkron.
+ */
 void io_req_queue_iowq(struct io_kiocb *req);
 
+/** 
+ * Memproses operasi polling untuk permintaan tertentu. 
+ * Digunakan untuk menangani operasi polling.
+ */
 int io_poll_issue(struct io_kiocb *req, io_tw_token_t tw);
+/** 
+ * Mengirimkan SQE ke ring untuk diproses. 
+ * Digunakan untuk memulai operasi berdasarkan SQE.
+ */
 int io_submit_sqes(struct io_ring_ctx *ctx, unsigned int nr);
+/** 
+ * Melakukan polling IO untuk konteks tertentu. 
+ * Digunakan untuk memproses operasi IO secara sinkron.
+ */
 int io_do_iopoll(struct io_ring_ctx *ctx, bool force_nonspin);
+/** 
+ * Mengosongkan dan mem-flush semua penyelesaian yang tertunda. 
+ * Digunakan untuk memastikan semua pekerjaan selesai.
+ */
 void __io_submit_flush_completions(struct io_ring_ctx *ctx);
 
+/** 
+ * Membebaskan pekerjaan io_wq yang telah selesai. 
+ * Digunakan untuk membersihkan sumber daya pekerjaan.
+ */
 struct io_wq_work *io_wq_free_work(struct io_wq_work *work);
+/** 
+ * Mengirimkan pekerjaan io_wq untuk diproses. 
+ * Digunakan untuk memulai pekerjaan yang dijadwalkan.
+ */
 void io_wq_submit_work(struct io_wq_work *work);
 
+/** 
+ * Membebaskan permintaan yang telah selesai. 
+ * Digunakan untuk membersihkan sumber daya permintaan.
+ */
 void io_free_req(struct io_kiocb *req);
+/** 
+ * Menambahkan permintaan berikutnya ke antrean kerja. 
+ * Digunakan untuk melanjutkan operasi yang tertunda.
+ */
 void io_queue_next(struct io_kiocb *req);
+/** 
+ * Mengisi ulang referensi tugas untuk konteks io_uring. 
+ * Digunakan untuk memastikan referensi tugas mencukupi.
+ */
 void io_task_refs_refill(struct io_uring_task *tctx);
+/** 
+ * Mengalokasikan ulang permintaan jika cache kosong. 
+ * Digunakan untuk memastikan permintaan tersedia untuk operasi.
+ */
 bool __io_alloc_req_refill(struct io_ring_ctx *ctx);
 
+/** 
+ * Memeriksa apakah tugas cocok dengan konteks tertentu. 
+ * Digunakan untuk membatalkan atau memproses tugas yang sesuai.
+ */
 bool io_match_task_safe(struct io_kiocb *head, struct io_uring_task *tctx,
 			bool cancel_all);
 
+/** 
+ * Mengaktifkan polling untuk antrean kerja io_uring. 
+ * Digunakan untuk memulai operasi polling.
+ */
 void io_activate_pollwq(struct io_ring_ctx *ctx);
 
 static inline void io_lockdep_assert_cq_locked(struct io_ring_ctx *ctx)

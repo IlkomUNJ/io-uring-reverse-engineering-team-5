@@ -33,11 +33,19 @@ struct io_msg {
 	u32 flags;
 };
 
+/** 
+ * Membuka kunci konteks io_ring eksternal. 
+ * Digunakan untuk memastikan akses aman ke konteks target.
+ */
 static void io_double_unlock_ctx(struct io_ring_ctx *octx)
 {
 	mutex_unlock(&octx->uring_lock);
 }
 
+/** 
+ * Mengunci konteks io_ring eksternal. 
+ * Digunakan untuk memastikan sinkronisasi antara dua konteks.
+ */
 static int io_lock_external_ctx(struct io_ring_ctx *octx,
 				unsigned int issue_flags)
 {
@@ -55,6 +63,10 @@ static int io_lock_external_ctx(struct io_ring_ctx *octx,
 	return 0;
 }
 
+/** 
+ * Membersihkan sumber daya yang digunakan oleh permintaan MSG_RING. 
+ * Digunakan untuk membebaskan file sumber setelah operasi selesai.
+ */
 void io_msg_ring_cleanup(struct io_kiocb *req)
 {
 	struct io_msg *msg = io_kiocb_to_cmd(req, struct io_msg);
@@ -66,11 +78,19 @@ void io_msg_ring_cleanup(struct io_kiocb *req)
 	msg->src_file = NULL;
 }
 
+/** 
+ * Memeriksa apakah permintaan MSG_RING memerlukan eksekusi jarak jauh. 
+ * Digunakan untuk menentukan apakah pekerjaan harus dijalankan di thread lain.
+ */
 static inline bool io_msg_need_remote(struct io_ring_ctx *target_ctx)
 {
 	return target_ctx->task_complete;
 }
 
+/** 
+ * Menyelesaikan pekerjaan task_work untuk MSG_RING. 
+ * Digunakan untuk memproses hasil permintaan MSG_RING.
+ */
 static void io_msg_tw_complete(struct io_kiocb *req, io_tw_token_t tw)
 {
 	struct io_ring_ctx *ctx = req->ctx;
@@ -86,6 +106,10 @@ static void io_msg_tw_complete(struct io_kiocb *req, io_tw_token_t tw)
 	percpu_ref_put(&ctx->refs);
 }
 
+/** 
+ * Mengirimkan permintaan MSG_RING ke konteks target secara jarak jauh. 
+ * Digunakan untuk memproses permintaan MSG_RING di ring lain.
+ */
 static int io_msg_remote_post(struct io_ring_ctx *ctx, struct io_kiocb *req,
 			      int res, u32 cflags, u64 user_data)
 {
@@ -104,6 +128,10 @@ static int io_msg_remote_post(struct io_ring_ctx *ctx, struct io_kiocb *req,
 	return 0;
 }
 
+/** 
+ * Mendapatkan struktur io_kiocb dari cache atau mengalokasi yang baru. 
+ * Digunakan untuk memproses permintaan MSG_RING.
+ */
 static struct io_kiocb *io_msg_get_kiocb(struct io_ring_ctx *ctx)
 {
 	struct io_kiocb *req = NULL;
@@ -117,6 +145,10 @@ static struct io_kiocb *io_msg_get_kiocb(struct io_ring_ctx *ctx)
 	return kmem_cache_alloc(req_cachep, GFP_KERNEL | __GFP_NOWARN | __GFP_ZERO);
 }
 
+/** 
+ * Memproses data MSG_RING secara jarak jauh. 
+ * Digunakan untuk mengirim data ke ring target.
+ */
 static int io_msg_data_remote(struct io_ring_ctx *target_ctx,
 			      struct io_msg *msg)
 {
@@ -134,6 +166,10 @@ static int io_msg_data_remote(struct io_ring_ctx *target_ctx,
 					msg->user_data);
 }
 
+/** 
+ * Memproses data MSG_RING di ring target. 
+ * Digunakan untuk menangani permintaan MSG_RING dengan data.
+ */
 static int __io_msg_ring_data(struct io_ring_ctx *target_ctx,
 			      struct io_msg *msg, unsigned int issue_flags)
 {
@@ -165,6 +201,10 @@ static int __io_msg_ring_data(struct io_ring_ctx *target_ctx,
 	return ret;
 }
 
+/** 
+ * Memproses data MSG_RING untuk permintaan tertentu. 
+ * Digunakan untuk menangani permintaan MSG_RING dengan data.
+ */
 static int io_msg_ring_data(struct io_kiocb *req, unsigned int issue_flags)
 {
 	struct io_ring_ctx *target_ctx = req->file->private_data;
@@ -173,6 +213,10 @@ static int io_msg_ring_data(struct io_kiocb *req, unsigned int issue_flags)
 	return __io_msg_ring_data(target_ctx, msg, issue_flags);
 }
 
+/** 
+ * Mengambil file sumber untuk permintaan MSG_RING. 
+ * Digunakan untuk memvalidasi dan mendapatkan file yang akan dikirim.
+ */
 static int io_msg_grab_file(struct io_kiocb *req, unsigned int issue_flags)
 {
 	struct io_msg *msg = io_kiocb_to_cmd(req, struct io_msg);
@@ -193,6 +237,10 @@ static int io_msg_grab_file(struct io_kiocb *req, unsigned int issue_flags)
 	return ret;
 }
 
+/** 
+ * Menyelesaikan instalasi file untuk MSG_RING. 
+ * Digunakan untuk mengirim file ke ring target.
+ */
 static int io_msg_install_complete(struct io_kiocb *req, unsigned int issue_flags)
 {
 	struct io_ring_ctx *target_ctx = req->file->private_data;
@@ -225,6 +273,10 @@ out_unlock:
 	return ret;
 }
 
+/** 
+ * Menyelesaikan pekerjaan task_work untuk pengiriman file MSG_RING. 
+ * Digunakan untuk memproses hasil pengiriman file.
+ */
 static void io_msg_tw_fd_complete(struct callback_head *head)
 {
 	struct io_msg *msg = container_of(head, struct io_msg, tw);
@@ -238,6 +290,10 @@ static void io_msg_tw_fd_complete(struct callback_head *head)
 	io_req_queue_tw_complete(req, ret);
 }
 
+/** 
+ * Mengirim file secara jarak jauh menggunakan MSG_RING. 
+ * Digunakan untuk mengirim file ke ring target.
+ */
 static int io_msg_fd_remote(struct io_kiocb *req)
 {
 	struct io_ring_ctx *ctx = req->file->private_data;
@@ -254,6 +310,10 @@ static int io_msg_fd_remote(struct io_kiocb *req)
 	return IOU_ISSUE_SKIP_COMPLETE;
 }
 
+/** 
+ * Mengirim file ke ring target menggunakan MSG_RING. 
+ * Digunakan untuk memproses permintaan pengiriman file.
+ */
 static int io_msg_send_fd(struct io_kiocb *req, unsigned int issue_flags)
 {
 	struct io_ring_ctx *target_ctx = req->file->private_data;
@@ -277,6 +337,10 @@ static int io_msg_send_fd(struct io_kiocb *req, unsigned int issue_flags)
 	return io_msg_install_complete(req, issue_flags);
 }
 
+/** 
+ * Mempersiapkan permintaan MSG_RING berdasarkan SQE. 
+ * Digunakan untuk memvalidasi dan mengatur parameter permintaan.
+ */
 static int __io_msg_ring_prep(struct io_msg *msg, const struct io_uring_sqe *sqe)
 {
 	if (unlikely(sqe->buf_index || sqe->personality))
@@ -295,11 +359,19 @@ static int __io_msg_ring_prep(struct io_msg *msg, const struct io_uring_sqe *sqe
 	return 0;
 }
 
+/** 
+ * Mempersiapkan permintaan MSG_RING untuk eksekusi. 
+ * Digunakan untuk memvalidasi dan mengatur parameter permintaan.
+ */
 int io_msg_ring_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 {
 	return __io_msg_ring_prep(io_kiocb_to_cmd(req, struct io_msg), sqe);
 }
 
+/** 
+ * Menangani permintaan MSG_RING untuk data atau file. 
+ * Digunakan untuk memproses permintaan MSG_RING berdasarkan jenisnya.
+ */
 int io_msg_ring(struct io_kiocb *req, unsigned int issue_flags)
 {
 	struct io_msg *msg = io_kiocb_to_cmd(req, struct io_msg);
@@ -331,6 +403,10 @@ done:
 	return IOU_OK;
 }
 
+/** 
+ * Menangani permintaan MSG_RING secara sinkron. 
+ * Digunakan untuk memproses permintaan MSG_RING tanpa thread tambahan.
+ */
 int io_uring_sync_msg_ring(struct io_uring_sqe *sqe)
 {
 	struct io_msg io_msg = { };
