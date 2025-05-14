@@ -3,21 +3,28 @@
 
 #include <linux/io_uring_types.h>
 
+// Makro untuk mengiterasi setiap node dalam daftar kerja mulai dari node pertama.
 #define __wq_list_for_each(pos, head)				\
 	for (pos = (head)->first; pos; pos = (pos)->next)
 
+// Makro untuk mengiterasi setiap node dalam daftar kerja dengan menyimpan 
+// referensi ke node sebelumnya.
 #define wq_list_for_each(pos, prv, head)			\
 	for (pos = (head)->first, prv = NULL; pos; prv = pos, pos = (pos)->next)
 
+// Makro untuk melanjutkan iterasi daftar kerja dari posisi tertentu.
 #define wq_list_for_each_resume(pos, prv)			\
 	for (; pos; prv = pos, pos = (pos)->next)
 
+// Mengecek apakah daftar kerja kosong dengan memeriksa node pertama.
 #define wq_list_empty(list)	(READ_ONCE((list)->first) == NULL)
 
+//  Menginisialisasi daftar kerja dengan mengatur node pertama ke NULL.
 #define INIT_WQ_LIST(list)	do {				\
 	(list)->first = NULL;					\
 } while (0)
 
+// Menambahkan node baru setelah node tertentu dalam daftar kerja.
 static inline void wq_list_add_after(struct io_wq_work_node *node,
 				     struct io_wq_work_node *pos,
 				     struct io_wq_work_list *list)
@@ -30,6 +37,7 @@ static inline void wq_list_add_after(struct io_wq_work_node *node,
 		list->last = node;
 }
 
+// Menambahkan node baru di akhir daftar kerja.
 static inline void wq_list_add_tail(struct io_wq_work_node *node,
 				    struct io_wq_work_list *list)
 {
@@ -43,6 +51,7 @@ static inline void wq_list_add_tail(struct io_wq_work_node *node,
 	}
 }
 
+// Menambahkan node baru di awal daftar kerja.
 static inline void wq_list_add_head(struct io_wq_work_node *node,
 				    struct io_wq_work_list *list)
 {
@@ -52,6 +61,7 @@ static inline void wq_list_add_head(struct io_wq_work_node *node,
 	WRITE_ONCE(list->first, node);
 }
 
+// Memotong daftar kerja dari node tertentu hingga akhir, dengan memperbarui referensi node sebelumnya.
 static inline void wq_list_cut(struct io_wq_work_list *list,
 			       struct io_wq_work_node *last,
 			       struct io_wq_work_node *prev)
@@ -67,6 +77,7 @@ static inline void wq_list_cut(struct io_wq_work_list *list,
 	last->next = NULL;
 }
 
+// Menggabungkan daftar kerja ke node tertentu tanpa memeriksa apakah daftar kosong.
 static inline void __wq_list_splice(struct io_wq_work_list *list,
 				    struct io_wq_work_node *to)
 {
@@ -75,6 +86,7 @@ static inline void __wq_list_splice(struct io_wq_work_list *list,
 	INIT_WQ_LIST(list);
 }
 
+// Menggabungkan daftar kerja ke node tertentu jika daftar tidak kosong.
 static inline bool wq_list_splice(struct io_wq_work_list *list,
 				  struct io_wq_work_node *to)
 {
@@ -85,6 +97,7 @@ static inline bool wq_list_splice(struct io_wq_work_list *list,
 	return false;
 }
 
+// Menambahkan node baru di awal stack kerja.
 static inline void wq_stack_add_head(struct io_wq_work_node *node,
 				     struct io_wq_work_node *stack)
 {
@@ -92,6 +105,7 @@ static inline void wq_stack_add_head(struct io_wq_work_node *node,
 	stack->next = node;
 }
 
+// Menghapus node tertentu dari daftar kerja dengan memperbarui referensi node sebelumnya
 static inline void wq_list_del(struct io_wq_work_list *list,
 			       struct io_wq_work_node *node,
 			       struct io_wq_work_node *prev)
@@ -100,6 +114,7 @@ static inline void wq_list_del(struct io_wq_work_list *list,
 }
 
 static inline
+// Mengekstrak node pertama dari stack kerja.
 struct io_wq_work_node *wq_stack_extract(struct io_wq_work_node *stack)
 {
 	struct io_wq_work_node *node = stack->next;
@@ -108,6 +123,7 @@ struct io_wq_work_node *wq_stack_extract(struct io_wq_work_node *stack)
 	return node;
 }
 
+// Mendapatkan pekerjaan berikutnya dalam daftar kerja dari node saat ini.
 static inline struct io_wq_work *wq_next_work(struct io_wq_work *work)
 {
 	if (!work->list.next)

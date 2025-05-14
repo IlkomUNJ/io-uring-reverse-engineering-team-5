@@ -7,6 +7,8 @@
 #include <net/page_pool/types.h>
 #include <net/net_trackers.h>
 
+// Struktur yang merepresentasikan area zero-copy receive (ZCRX), 
+// termasuk halaman memori, referensi pengguna, dan daftar bebas.
 struct io_zcrx_area {
 	struct net_iov_area	nia;
 	struct io_zcrx_ifq	*ifq;
@@ -22,6 +24,8 @@ struct io_zcrx_area {
 	u32			*freelist;
 };
 
+// Struktur yang merepresentasikan antrean interface (IFQ) untuk operasi 
+// ZCRX, termasuk ring buffer, perangkat jaringan, dan area terkait.
 struct io_zcrx_ifq {
 	struct io_ring_ctx		*ctx;
 	struct io_zcrx_area		*area;
@@ -40,10 +44,18 @@ struct io_zcrx_ifq {
 };
 
 #if defined(CONFIG_IO_URING_ZCRX)
+
+// Mendaftarkan IFQ untuk operasi ZCRX dengan memvalidasi parameter dan menginisialisasi sumber daya.
 int io_register_zcrx_ifq(struct io_ring_ctx *ctx,
 			 struct io_uring_zcrx_ifq_reg __user *arg);
+
+// Membatalkan pendaftaran semua IFQ yang terkait dengan konteks io_uring.
 void io_unregister_zcrx_ifqs(struct io_ring_ctx *ctx);
+
+// Menutup semua IFQ yang terdaftar dan membersihkan buffer terkait.
 void io_shutdown_zcrx_ifqs(struct io_ring_ctx *ctx);
+
+// Fungsi utama untuk menerima data dari socket menggunakan ZCRX jika didukung.
 int io_zcrx_recv(struct io_kiocb *req, struct io_zcrx_ifq *ifq,
 		 struct socket *sock, unsigned int flags,
 		 unsigned issue_flags, unsigned int *len);
@@ -67,7 +79,10 @@ static inline int io_zcrx_recv(struct io_kiocb *req, struct io_zcrx_ifq *ifq,
 }
 #endif
 
+// Menangani operasi penerimaan data dengan zero-copy melalui io_uring.
 int io_recvzc(struct io_kiocb *req, unsigned int issue_flags);
+
+// Mempersiapkan operasi penerimaan data dengan zero-copy melalui io_uring.
 int io_recvzc_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe);
 
 #endif
