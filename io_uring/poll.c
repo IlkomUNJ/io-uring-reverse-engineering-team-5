@@ -52,7 +52,11 @@ struct io_poll_table {
 #define IO_POLL_REF_BIAS	128
 
 #define IO_WQE_F_DOUBLE		1
-
+/*
+ * Menangani event wake-up untuk permintaan poll.
+ * Memeriksa event mask dan menentukan apakah permintaan harus dijalankan
+ * atau dihapus dari wait queue.
+ */
 static int io_poll_wake(struct wait_queue_entry *wait, unsigned mode, int sync,
 			void *key);
 
@@ -69,7 +73,10 @@ static inline bool wqe_is_double(struct wait_queue_entry *wqe)
 
 	return priv & IO_WQE_F_DOUBLE;
 }
-
+/*
+ * Mencoba mengambil kepemilikan atas permintaan poll dengan menaikkan reference count.
+ * Jika reference count sudah dinaikkan sebelumnya, delegasikan ke slowpath.
+ */
 static bool io_poll_get_ownership_slowpath(struct io_kiocb *req)
 {
 	int v;
@@ -98,6 +105,10 @@ static inline bool io_poll_get_ownership(struct io_kiocb *req)
 	return !(atomic_fetch_inc(&req->poll_refs) & IO_POLL_REF_MASK);
 }
 
+/*
+ * Menandai permintaan poll sebagai dibatalkan dengan menyetel flag pembatalan
+ * dalam reference count-nya.
+ */
 static void io_poll_mark_cancelled(struct io_kiocb *req)
 {
 	atomic_or(IO_POLL_CANCEL_FLAG, &req->poll_refs);
@@ -137,7 +148,9 @@ static void io_init_poll_iocb(struct io_poll *poll, __poll_t events)
 	INIT_LIST_HEAD(&poll->wait.entry);
 	init_waitqueue_func_entry(&poll->wait, io_poll_wake);
 }
-
+/*
+ * Menghapus entri poll dari wait queue yang terkait.
+ */
 static inline void io_poll_remove_entry(struct io_poll *poll)
 {
 	struct wait_queue_head *head = smp_load_acquire(&poll->head);
@@ -149,7 +162,10 @@ static inline void io_poll_remove_entry(struct io_poll *poll)
 		spin_unlock_irq(&head->lock);
 	}
 }
-
+/*
+ * Menghapus semua entri poll yang terkait dengan sebuah permintaan,
+ * termasuk entri tunggal dan ganda.
+ */
 static void io_poll_remove_entries(struct io_kiocb *req)
 {
 	/*
@@ -203,7 +219,10 @@ static void __io_poll_execute(struct io_kiocb *req, int mask)
 		flags = IOU_F_TWQ_LAZY_WAKE;
 	__io_req_task_work_add(req, flags);
 }
-
+/*
+ * Menjalankan permintaan poll jika berhasil memperoleh kepemilikan.
+ * Delegasi ke fungsi __io_poll_execute.
+ */
 static inline void io_poll_execute(struct io_kiocb *req, int res)
 {
 	if (io_poll_get_ownership(req))
@@ -311,7 +330,10 @@ static int io_poll_check_events(struct io_kiocb *req, io_tw_token_t tw)
 	io_napi_add(req);
 	return IOU_POLL_NO_ACTION;
 }
-
+/*
+ * Menangani task work untuk permintaan poll,
+ * termasuk memeriksa event, menjalankan ulang, atau menyelesaikannya.
+ */
 void io_poll_task_func(struct io_kiocb *req, io_tw_token_t tw)
 {
 	int ret;
@@ -356,7 +378,10 @@ void io_poll_task_func(struct io_kiocb *req, io_tw_token_t tw)
 			io_req_defer_failed(req, ret);
 	}
 }
-
+/*
+ * Membatalkan permintaan poll dengan menandainya sebagai dibatalkan
+ * dan menjalankan dengan hasil nol.
+ */
 static void io_poll_cancel_req(struct io_kiocb *req)
 {
 	io_poll_mark_cancelled(req);
@@ -807,6 +832,9 @@ static int __io_poll_cancel(struct io_ring_ctx *ctx, struct io_cancel_data *cd)
 	return -ENOENT;
 }
 
+/*
+ * Membatalkan permintaan poll berdasarkan data pembatalan yang diberikan.
+ */
 int io_poll_cancel(struct io_ring_ctx *ctx, struct io_cancel_data *cd,
 		   unsigned issue_flags)
 {
@@ -817,7 +845,10 @@ int io_poll_cancel(struct io_ring_ctx *ctx, struct io_cancel_data *cd,
 	io_ring_submit_unlock(ctx, issue_flags);
 	return ret;
 }
-
+/*
+ * Mem-parsing event mask dari io_uring_sqe dan menambahkan flag tambahan
+ * seperti EPOLLONESHOT atau EPOLLET.
+ */
 static __poll_t io_poll_parse_events(const struct io_uring_sqe *sqe,
 				     unsigned int flags)
 {
@@ -834,7 +865,10 @@ static __poll_t io_poll_parse_events(const struct io_uring_sqe *sqe,
 	return demangle_poll(events) |
 		(events & (EPOLLEXCLUSIVE|EPOLLONESHOT|EPOLLET));
 }
-
+/*
+ * Menyiapkan permintaan penghapusan poll dengan parsing event mask
+ * dan validasi io_uring_sqe.
+ */
 int io_poll_remove_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 {
 	struct io_poll_update *upd = io_kiocb_to_cmd(req, struct io_poll_update);
@@ -865,6 +899,10 @@ int io_poll_remove_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 	return 0;
 }
 
+/*
+ * Menyiapkan permintaan penambahan poll dengan mem-parsing event mask
+ * dan memvalidasi field dari io_uring_sqe.
+ */
 int io_poll_add_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 {
 	struct io_poll *poll = io_kiocb_to_cmd(req, struct io_poll);
@@ -882,6 +920,9 @@ int io_poll_add_prep(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 	return 0;
 }
 
+/*
+ * Menambahkan permintaan poll ke wait queue dan mengaktifkan handler-nya.
+ */
 int io_poll_add(struct io_kiocb *req, unsigned int issue_flags)
 {
 	struct io_poll *poll = io_kiocb_to_cmd(req, struct io_poll);
@@ -897,7 +938,10 @@ int io_poll_add(struct io_kiocb *req, unsigned int issue_flags)
 	}
 	return ret ?: IOU_ISSUE_SKIP_COMPLETE;
 }
-
+/*
+ * Menghapus permintaan poll dari wait queue dan opsional memperbarui
+ * event atau user data-nya.
+ */
 int io_poll_remove(struct io_kiocb *req, unsigned int issue_flags)
 {
 	struct io_poll_update *poll_update = io_kiocb_to_cmd(req, struct io_poll_update);
