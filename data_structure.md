@@ -79,3 +79,43 @@ io_issue_def   | io_uring/opdef.h | needs_file, plug, ioprio, iopoll, buffer_sel
 | | | | io_cold_defs | io_uring/opdef.c | local variable
 | | | | io_uring_op_supported | io_uring/opdef.c | function parameter
 | | | | io_uring_optable_init | io_uring/opdef.c | local variable
+
+Structure name | Defined in | Attributes | Caller Functions Source | source caller | usage
+---------------|------------|------------|-------------------------|---------------|-------------------
+io_issue_def   | io_uring/opdef.h | Various op-specific attributes (e.g., needs_file, pollin, pollout, etc.), prep and issue function pointers | io_uring/opdef.c | io_issue_defs[] | Defines behavior for each IORING_OP_* operation
+| | | | io_uring_get_opcode | io_uring/opdef.c | Used to validate and describe supported operations
+| | | | io_uring_op_supported | io_uring/opdef.c | Check if operation is supported
+| | | | io_uring_optable_init | io_uring/opdef.c | Initialization and validation
+io_cold_def    | io_uring/opdef.h | name, cleanup, fail handlers | io_uring/opdef.c | io_cold_defs[] | Defines cold path handlers for each IORING_OP_* operation
+| | | | io_uring_get_opcode | io_uring/opdef.c | Returns operation name string
+| | | | io_uring_optable_init | io_uring/opdef.c | Initialization and validation
+io_open         | io_uring/openclose.c | file, dfd, file_slot, filename, how, nofile | io_openat_prep | io_uring/openclose.c | File opening operations and preparation
+| | | | io_openat2_prep | io_uring/openclose.c | File opening operations and preparation
+| | | | io_openat | io_uring/openclose.c | File opening operations and preparation
+| | | | io_open_cleanup | io_uring/openclose.c | File opening operations and preparation
+io_close        | io_uring/openclose.c | file, fd, file_slot | io_close_prep | io_uring/openclose.c | File closing and fixed descriptor handling
+| | | | io_close | io_uring/openclose.c | File closing and fixed descriptor handling
+| | | | io_close_fixed | io_uring/openclose.c | File closing and fixed descriptor handling
+| | | | io_install_fixed_fd_prep | io_uring/openclose.c | File closing and fixed descriptor handling
+| | | | io_install_fixed_fd | io_uring/openclose.c | File closing and fixed descriptor handling
+io_fixed_install | io_uring/openclose.c | file, o_flags | io_install_fixed_fd_prep | io_uring/openclose.c | Install fixed file descriptors
+| | | | io_install_fixed_fd | io_uring/openclose.c | Install fixed file descriptors
+io_kiocb        | io_uring/openclose.h | req, sqe | io_openat_prep | io_uring/openclose.h | I/O control block for requests
+| | | | io_openat | io_uring/openclose.h | I/O control block for requests
+| | | | io_open_cleanup | io_uring/openclose.h | I/O control block for requests
+io_ring_ctx     | io_uring/openclose.h | ctx, issue_flags, offset | __io_close_fixed | io_uring/openclose.h | Context structure for io_uring ring handling
+| | | | io_openat | io_uring/openclose.h | Context structure for io_uring ring handling
+| | | | io_open_cleanup | io_uring/openclose.h | Context structure for io_uring ring handling
+io_poll_update  | io_uring/poll.c | file, old_user_data, new_user_data, events, update_events, update_user_data | N/A | N/A | Local variable for poll event updates
+io_poll_table   | io_uring/poll.c | pt, req, nr_entries, error, owning, result_mask | io_poll_queue_proc | io_uring/poll.c | Poll table operations and management
+io_poll         | io_uring/poll.c | head, events, wait | io_poll_remove_entries | io_uring/poll.c | Handling poll events
+| | | | __io_poll_execute | io_uring/poll.c | Handling poll events
+| | | | io_pollfree_wake | io_uring/poll.c | Handling poll events
+io_poll_wake    | io_uring/poll.c | wait, mode, sync, key | io_pollfree_wake | io_uring/poll.c | Polling wake functions for event handling
+io_poll_mark_cancelled | io_uring/poll.c | N/A | io_poll_cancel_req | io_uring/poll.c | Mark poll events as cancelled
+io_poll_get_ownership | io_uring/poll.c | N/A | io_poll_get_ownership_slowpath | io_uring/poll.c | Get ownership of a poll entry
+io_poll_req_insert | io_uring/poll.c | hash_node | io_poll_add_hash | io_uring/poll.c | Insert poll request into hash
+io_poll_execute | io_uring/poll.c | mask, res | __io_poll_execute | io_uring/poll.c | Execute poll events and actions
+io_poll_remove_entry | io_uring/poll.c | head | io_poll_remove_entries | io_uring/poll.c | Remove poll event entry from the queue
+io_poll_check_events | io_uring/poll.c | tw, poll_refs, events, cqe.res | io_poll_execute | io_uring/poll.c | Check for completed poll events
+io_poll_add_hash | io_uring/poll.c | N/A | io_poll_req_insert | io_uring/poll.c | Poll request insertion into hash
