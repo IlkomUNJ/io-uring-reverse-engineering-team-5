@@ -33,7 +33,7 @@ struct io_rw {
 	u32				len;
 	rwf_t				flags;
 };
-
+//Menentukan apakah file dapat menangani I/O asinkron tanpa blocking
 static bool io_file_supports_nowait(struct io_kiocb *req, __poll_t mask)
 {
 	/* If FMODE_NOWAIT is set for a file, we're golden */
@@ -48,7 +48,7 @@ static bool io_file_supports_nowait(struct io_kiocb *req, __poll_t mask)
 	/* No FMODE_NOWAIT support, and file isn't pollable. Tough luck. */
 	return false;
 }
-
+//Memastikan kompatibilitas dengan struktur user space 32-bit.
 static int io_iov_compat_buffer_select_prep(struct io_rw *rw)
 {
 	struct compat_iovec __user *uiov = u64_to_user_ptr(rw->addr);
@@ -59,7 +59,7 @@ static int io_iov_compat_buffer_select_prep(struct io_rw *rw)
 	rw->len = iov.iov_len;
 	return 0;
 }
-
+//Menyiapkan buffer untuk operasi yang membutuhkan pemilihan buffer.
 static int io_iov_buffer_select_prep(struct io_kiocb *req)
 {
 	struct iovec __user *uiov;
@@ -78,7 +78,7 @@ static int io_iov_buffer_select_prep(struct io_kiocb *req)
 	rw->len = iov.iov_len;
 	return 0;
 }
-
+//Mengonversi vektor I/O dari pengguna menjadi struktur yang dapat diakses kernel.
 static int io_import_vec(int ddir, struct io_kiocb *req,
 			 struct io_async_rw *io,
 			 const struct iovec __user *uvec,
@@ -105,7 +105,7 @@ static int io_import_vec(int ddir, struct io_kiocb *req,
 	}
 	return 0;
 }
-
+//Mempersiapkan buffer untuk operasi baca atau tulis.
 static int __io_import_rw_buffer(int ddir, struct io_kiocb *req,
 			     struct io_async_rw *io,
 			     unsigned int issue_flags)
@@ -127,7 +127,7 @@ static int __io_import_rw_buffer(int ddir, struct io_kiocb *req,
 	}
 	return import_ubuf(ddir, buf, sqe_len, &io->iter);
 }
-
+//Menjaga status iterator untuk operasi lanjutan.
 static inline int io_import_rw_buffer(int rw, struct io_kiocb *req,
 				      struct io_async_rw *io,
 				      unsigned int issue_flags)
@@ -141,7 +141,7 @@ static inline int io_import_rw_buffer(int rw, struct io_kiocb *req,
 	iov_iter_save_state(&io->iter, &io->iter_state);
 	return 0;
 }
-
+//Mengoptimalkan penggunaan memori dengan mendaur ulang struktur.
 static void io_rw_recycle(struct io_kiocb *req, unsigned int issue_flags)
 {
 	struct io_async_rw *rw = req->async_data;
@@ -158,7 +158,7 @@ static void io_rw_recycle(struct io_kiocb *req, unsigned int issue_flags)
 		req->flags &= ~REQ_F_ASYNC_DATA;
 	}
 }
-
+//Mencegah kebocoran resource dan menjamin pembersihan permintaan I/O secara aman.
 static void io_req_rw_cleanup(struct io_kiocb *req, unsigned int issue_flags)
 {
 	/*
@@ -193,7 +193,7 @@ static void io_req_rw_cleanup(struct io_kiocb *req, unsigned int issue_flags)
 		io_rw_recycle(req, issue_flags);
 	}
 }
-
+//Menyiapkan permintaan untuk eksekusi secara asinkron.
 static int io_rw_alloc_async(struct io_kiocb *req)
 {
 	struct io_ring_ctx *ctx = req->ctx;
@@ -248,7 +248,7 @@ static int io_prep_rw_pi(struct io_kiocb *req, struct io_rw *rw, int ddir,
 	io_meta_save_state(io);
 	return ret;
 }
-
+//Menyiapkan permintaan untuk eksekusi.
 static int __io_prep_rw(struct io_kiocb *req, const struct io_uring_sqe *sqe,
 			int ddir)
 {
@@ -319,12 +319,12 @@ static int io_prep_rw(struct io_kiocb *req, const struct io_uring_sqe *sqe,
 
 	return io_rw_do_import(req, ddir);
 }
-
+//Menangani setup untuk operasi baca.
 int io_prep_read(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 {
 	return io_prep_rw(req, sqe, ITER_DEST);
 }
-
+//enangani setup untuk operasi tulis.
 int io_prep_write(struct io_kiocb *req, const struct io_uring_sqe *sqe)
 {
 	return io_prep_rw(req, sqe, ITER_SOURCE);
@@ -894,7 +894,7 @@ static int io_rw_init_file(struct io_kiocb *req, fmode_t mode, int rw_type)
 
 	return 0;
 }
-
+//Mengimplementasikan logika utama untuk pembacaan data di io_uring.
 static int __io_read(struct io_kiocb *req, unsigned int issue_flags)
 {
 	bool force_nonblock = issue_flags & IO_URING_F_NONBLOCK;
@@ -1008,7 +1008,7 @@ done:
 	/* it's faster to check here then delegate to kfree */
 	return ret;
 }
-
+//Mengimplementasikan logika utama untuk penulisan data di io_uring.
 int io_read(struct io_kiocb *req, unsigned int issue_flags)
 {
 	int ret;
@@ -1200,7 +1200,7 @@ ret_eagain:
 		return -EAGAIN;
 	}
 }
-
+//Menangani operasi baca menggunakan buffer tetap yang telah diregistrasi.
 int io_read_fixed(struct io_kiocb *req, unsigned int issue_flags)
 {
 	int ret;
@@ -1211,7 +1211,7 @@ int io_read_fixed(struct io_kiocb *req, unsigned int issue_flags)
 
 	return io_read(req, issue_flags);
 }
-
+//Menangani operasi tulis menggunakan buffer tetap yang telah diregistrasi.
 int io_write_fixed(struct io_kiocb *req, unsigned int issue_flags)
 {
 	int ret;
@@ -1222,7 +1222,7 @@ int io_write_fixed(struct io_kiocb *req, unsigned int issue_flags)
 
 	return io_write(req, issue_flags);
 }
-
+//Menjamin penanganan error yang tepat pada operasi I/O yang gagal.
 void io_rw_fail(struct io_kiocb *req)
 {
 	int res;
@@ -1374,7 +1374,7 @@ int io_do_iopoll(struct io_ring_ctx *ctx, bool force_nonspin)
 	__io_submit_flush_completions(ctx);
 	return nr_events;
 }
-
+//Menjamin pembersihan struktur baca/tulis yang di-cache dengan benar.
 void io_rw_cache_free(const void *entry)
 {
 	struct io_async_rw *rw = (struct io_async_rw *) entry;
